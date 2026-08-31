@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Contract Transparency & Obligation Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2222%22 font-size=%2222%22>🛡️</text></svg>">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">🛡️</div>
+      <div>
+        <h1 class="brand-title">Student Contract & Obligation Assistant</h1>
+        <p class="brand-subtitle">Protecting Students from Hidden Financial, Bond & Exit Obligations</p>
+      </div>
+    </div>
+
+    <div class="header-status-group">
+      <div id="healthBadge" class="health-badge">
+        <span class="health-dot" id="healthDot"></span>
+        <span id="healthStatusText">🟢 Cloud AI Active</span>
+      </div>
+
+      <div class="header-actions">
+        <button id="saveBtn" class="btn btn-secondary btn-sm" title="Save Checklist & Analysis">💾 Save</button>
+        <button id="shareBtn" class="btn btn-secondary btn-sm" title="Generate Shareable Link">🔗 Share</button>
+        <button id="exportMdBtn" class="btn btn-secondary btn-sm" title="Export as Markdown Report">📥 Export Report</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-upload">
+        <span>📄</span> Upload & Analyze
+      </button>
+      <button class="tab-btn" data-tab="tab-findings">
+        <span>🔍</span> Obligation Findings <span id="findingsCountBadge" class="tab-badge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-checklist">
+        <span>✅</span> Action Checklist <span id="checklistProgressBadge" class="tab-badge">0%</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-agent">
+        <span>🤖</span> Agentic AI & Chatbot
+      </button>
+      <button class="tab-btn" data-tab="tab-voice">
+        <span>🎙️</span> Voice Assistant
+      </button>
+      <button class="tab-btn" data-tab="tab-verification">
+        <span>🏛️</span> Entity Verification
+      </button>
+    </nav>
+
+    <!-- Tab 1: Upload & Analyze -->
+    <section id="tab-upload" class="tab-content active">
+      <div class="grid-2-col">
+        <!-- Left: Upload Box -->
+        <div class="card">
+          <h2 class="card-title">Upload Contract / Offer Letter</h2>
+          <p class="card-description">Upload your internship offer letter, training agreement, or employment contract (PDF, TXT, DOCX).</p>
+
+          <div id="dropzone" class="upload-dropzone">
+            <div class="dropzone-icon">📁</div>
+            <div class="dropzone-title">Click to upload or drag & drop file</div>
+            <div class="dropzone-subtitle">Supported: PDF, Text files up to 10MB</div>
+            <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx,.md" style="display: none;">
+          </div>
+
+          <div style="margin: 1rem 0; text-align: center; color: var(--text-muted); font-size: 0.85rem;">— OR PASTE TEXT DIRECTLY —</div>
+
+          <textarea id="pastedText" class="input-text" rows="7" placeholder="Paste the terms, clauses, or text of your contract here..."></textarea>
+
+          <button id="analyzeBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.75rem;">
+            🔍 Analyze Contract Obligations
+          </button>
+        </div>
+
+        <!-- Right: 1-Click Test Samples -->
+        <div class="card">
+          <h2 class="card-title">
+            <span>⚡ 1-Click Evaluation Samples</span>
+            <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Instant Testing</span>
+          </h2>
+          <p class="card-description">Select a realistic student offer letter to inspect the contract analysis engine immediately without uploading:</p>
+
+          <div id="sampleCardsContainer" class="sample-cards">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Findings & Risk Summary -->
+    <section id="tab-findings" class="tab-content">
+      <!-- Summary Banner -->
+      <div id="riskBanner" class="risk-banner">
+        <div>
+          <h2 style="font-size: 1.2rem; margin-bottom: 0.25rem;">Contract Obligation Assessment</h2>
+          <p id="riskSummaryText" style="color: var(--text-muted); font-size: 0.9rem;">No document analyzed yet.</p>
+        </div>
+        <div id="riskScoreBadge" class="risk-score-badge risk-score-low">
+          Status: Ready
+        </div>
+      </div>
+
+      <!-- Missing Information Alert -->
+      <div id="missingInfoAlert" class="card" style="display: none; border-left: 5px solid #f59e0b; margin-bottom: 1.5rem;">
+        <h3 style="color: #b45309; font-size: 1rem; margin-bottom: 0.5rem;">❓ Unclear / Missing Contract Terms</h3>
+        <ul id="missingInfoList" style="padding-left: 1.25rem; font-size: 0.875rem; color: #78350f;"></ul>
+      </div>
+
+      <!-- Findings List -->
+      <div class="card">
+        <div class="card-title">
+          <span>Identified Obligations & Clauses</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <select id="severityFilter" class="checklist-select">
+              <option value="all">All Severities</option>
+              <option value="high">High Severity Only</option>
+              <option value="medium">Medium Severity Only</option>
+              <option value="low">Low Severity Only</option>
+            </select>
+          </div>
+        </div>
+        <p class="card-description">Every finding is supported by exact textual evidence, severity categorization, and concrete student recommendations.</p>
+
+        <div id="findingsContainer">
+          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Upload a document or pick a sample to view clause findings.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Action Checklist -->
+    <section id="tab-checklist" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>Student Action Checklist</span>
+          <button id="addCustomTaskBtn" class="btn btn-secondary btn-sm">+ Add Custom Task</button>
+        </div>
+        <p class="card-description">Step-by-step actionable checklist generated specifically from your contract clauses. Track your negotiation and clarification progress.</p>
+
+        <!-- Progress Bar -->
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
+          <span>Progress: <span id="progressPercentageText">0%</span></span>
+          <span><span id="progressRatioText">0 / 0</span> Tasks Completed</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+
+        <div id="checklistContainer">
+          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No checklist active. Analyze a contract to generate customized tasks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Agentic AI & Chatbot -->
+    <section id="tab-agent" class="tab-content">
+      <div class="grid-2-col">
+        <!-- Chatbot Window -->
+        <div class="chat-window">
+          <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); background: #f8fafc; font-weight: 600; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>💬 Document & Checklist-Aware Chatbot</span>
+            <span style="font-size: 0.75rem; color: #10b981; font-weight: normal;">● Context Connected</span>
+          </div>
+
+          <div id="chatMessages" class="chat-messages">
+            <div class="chat-bubble chat-assistant">
+              👋 Hello! I am your <strong>Student Contract Assistant</strong>. I am directly aware of your currently opened document, obligation findings, and checklist. 
+              <br><br>
+              You can ask me questions about fees, bond periods, notice requirements, or ask me to draft an inquiry email to the HR team.
+            </div>
+          </div>
+
+          <!-- Quick Prompts Chips -->
+          <div class="quick-prompts">
+            <button class="prompt-chip" data-prompt="Check this contract and tell me what I should do.">⚡ Run Agent Goal: What should I do?</button>
+            <button class="prompt-chip" data-prompt="Is there any payment or fee required?">💰 Any payment terms?</button>
+            <button class="prompt-chip" data-prompt="What is the bond duration and penalty?">🔒 Bond & Penalties?</button>
+            <button class="prompt-chip" data-prompt="What is my next priority action?">📌 What is my next task?</button>
+            <button class="prompt-chip" data-prompt="Draft an email to HR asking about the training fee and bond terms.">✉️ Draft HR Email</button>
+          </div>
+
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" class="input-text" placeholder="Ask a question about your contract obligations...">
+            <button id="sendChatBtn" class="btn btn-primary">Send</button>
+          </div>
+        </div>
+
+        <!-- Agent Workflow & Reasoning Trace -->
+        <div class="card" style="display: flex; flex-direction: column;">
+          <h2 class="card-title">🤖 Action-Oriented Agentic Loop</h2>
+          <p class="card-description">The agent follows a bounded tool-use cycle: <strong>Goal → Understand → Plan → Choose Tool → Execute → Verify → Update Checklist → Next Action</strong>.</p>
+
+          <div id="agentTraceBox" class="agent-trace-card" style="flex: 1; overflow-y: auto; max-height: 440px;">
+            <div style="color: #94a3b8;">// Agent Execution Trace will appear here when you run an agent workflow</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Voice Assistant -->
+    <section id="tab-voice" class="tab-content">
+      <div class="card voice-hero">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎙️ Conversational Voice Assistant</h2>
+        <p class="card-description" style="max-width: 600px; margin: 0 auto 2rem auto;">
+          Speak hands-free with the contract assistant. Equipped with Web Speech recognition and local rule-based fallback when offline.
+        </p>
+
+        <button id="voiceMicBtn" class="mic-circle-btn" title="Click to Start Speaking">
+          🎤
+        </button>
+
+        <div id="voiceStatusText" style="margin-top: 1.5rem; font-weight: 600; font-size: 1rem; color: #475569;">
+          Click the microphone and speak your query
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="prompt-chip voice-command-chip" data-command="What are my obligations?">"What are my obligations?"</button>
+          <button class="prompt-chip voice-command-chip" data-command="Is there any training fee?">"Is there any training fee?"</button>
+          <button class="prompt-chip voice-command-chip" data-command="What is my next task?">"What is my next task?"</button>
+          <button class="prompt-chip voice-command-chip" data-command="Explain the service bond.">"Explain the service bond."</button>
+        </div>
+
+        <!-- Voice Live Transcript Box -->
+        <div style="margin-top: 2rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; text-align: left;">
+          <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Voice Interaction Log:</div>
+          <div id="voiceTranscriptLog" style="font-size: 0.9rem; color: #1e293b; min-height: 50px;">
+            (Voice transcript and verbal replies will appear here)
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Entity Verification -->
+    <section id="tab-verification" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">🏛️ Corporate Entity Verification</h2>
+        <p class="card-description">
+          Cross-checking company registration details against official records.
+        </p>
+
+        <div id="verificationContent">
+          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Upload or select a contract to see entity verification records.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add Task Modal -->
+  <div id="addTaskModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 1rem;">Add Custom Checklist Task</h3>
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Task Title</label>
+        <input type="text" id="customTaskTitle" class="input-text" placeholder="e.g. Inquire about college exam leaves">
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Description</label>
+        <textarea id="customTaskDesc" class="input-text" rows="3" placeholder="Details or questions you want to ask..."></textarea>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Priority</label>
+        <select id="customTaskPriority" class="input-text">
+          <option value="High">High</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button id="cancelAddTaskBtn" class="btn btn-secondary">Cancel</button>
+        <button id="saveCustomTaskBtn" class="btn btn-primary">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Link Modal -->
+  <div id="shareModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 0.5rem;">🔗 Share Your Analysis & Checklist</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Share this secure link with your mentor, college placement coordinator, or team member.
+      </p>
+      <input type="text" id="shareUrlInput" class="input-text" readonly style="margin-bottom: 1rem; background: #f8fafc;">
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button id="closeShareModalBtn" class="btn btn-secondary">Close</button>
+        <button id="copyShareUrlBtn" class="btn btn-primary">📋 Copy Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>🛡️ AI Student Contract Transparency Assistant • Strictly objective clause analysis with zero scam labeling • Not legal advice</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

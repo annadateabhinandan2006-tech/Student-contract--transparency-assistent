@@ -1,0 +1,28 @@
+{
+  "name": "ai-student-contract-assistant",
+  "version": "1.0.0",
+  "description": "Protecting Students from Hidden Obligations - AI Document Assistant",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "test": "node tests/analyzer.test.js && node tests/integration.test.js"
+  },
+  "keywords": [
+    "student-protection",
+    "contract-analysis",
+    "hidden-obligations",
+    "agentic-ai",
+    "voice-assistant"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.3.0",
+    "pdf-parse": "^2.4.5"
+  }
+}

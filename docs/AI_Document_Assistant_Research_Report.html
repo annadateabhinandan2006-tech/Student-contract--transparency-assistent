@@ -1,0 +1,281 @@
+<hr />
+<p>title: "AI Document Assistant: Student Contract Transparency, Agentic AI &amp; Offline Voice Assistance"
+subtitle: "Technical Research, Solution Architecture, Development Roadmap and Prototype Documentation"
+date: "2026-08-28"
+version: "1.0.0"</p>
+<hr />
+<h1>AI Document Assistant: Student Contract Transparency, Agentic AI &amp; Offline Voice Assistance</h1>
+<p><strong>Subtitle:</strong> Technical Research, Solution Architecture, Development Roadmap and Prototype Documentation</p>
+<p><strong>Version:</strong> 1.0.0<br />
+<strong>Date:</strong> 2026-08-28<br />
+<strong>Technology Stack:</strong> Node.js, Python, Java, LLMs, OCR, Speech-to-Text, quantised local models  </p>
+<h2>Executive Summary</h2>
+<p>The AI Student Contract Transparency &amp; Action Assistant aims to help students understand potentially important financial and contractual obligations before committing to internships, jobs, training programs, or similar opportunities. </p>
+<p>The project combines AI document understanding, contract/offer-letter analysis, actionable checklist generation, agentic AI, a conversational chatbot, and voice assistance. It also features offline fallback, company verification, persistent saving, team sharing, and server status and recovery capabilities. By identifying potentially risky or unclear clauses, the system provides evidence-backed information and recommended questions/actions to ensure transparency and empower students in their decision-making.</p>
+<h2>Problem Statement</h2>
+<p>Students often receive internship, job, or training agreements that contain important terms that are difficult to understand. These terms may include:
+- Training fees, registration fees, certification fees
+- Security deposits, post-selection payments, refund conditions
+- Penalties, bonds, minimum commitments, notice periods
+- Salary/stipend conditions, deductions, termination clauses
+- Other complex contractual obligations</p>
+<p>Without proper guidance, students may not fully understand these terms before accepting an opportunity, leading to unexpected financial or professional burdens.</p>
+<p>A secondary problem is that cloud-dependent AI assistance can become unavailable due to internet failure, server downtime, API failure, or network instability. Thus, robust offline fallback assistance is a core area of research in this project to ensure continuous accessibility.</p>
+<h2>Proposed Solution</h2>
+<p>The proposed solution addresses the problem through the following pipeline:</p>
+<p><code>Student</code> ↓ <code>Upload / Scan Contract</code> ↓ <code>Document Extraction</code> ↓ <code>AI Contract Analysis</code> ↓ <code>Risk &amp; Obligation Extraction</code> ↓ <code>Company Verification</code> ↓ <code>Evidence Cross-Check</code> ↓ <code>Student-Friendly Report</code> ↓ <code>Action Checklist</code> ↓ <code>Agentic Guidance</code> ↓ <code>Chatbot + Voice Assistant</code> ↓ <code>Save</code> ↓ <code>Team Sharing</code></p>
+<p><strong>Explanation of Stages:</strong>
+- <strong>Upload / Scan Contract:</strong> The student inputs the document.
+- <strong>Document Extraction &amp; AI Analysis:</strong> Information is extracted and analyzed using AI.
+- <strong>Risk &amp; Obligation Extraction:</strong> Potential financial and legal obligations are highlighted.
+- <strong>Company Verification &amp; Evidence Cross-Check:</strong> Company details are checked against primary sources and mapped to evidence in the text.
+- <strong>Report &amp; Checklist:</strong> A friendly report and actionable checklist are generated.
+- <strong>Agentic Guidance &amp; Assistance:</strong> A chatbot/voice assistant guides the student through next steps.
+- <strong>Save &amp; Team Sharing:</strong> State is preserved and can be shared with peers or mentors.</p>
+<h2>Existing Working System</h2>
+<p><em>(Note: As verified by repository inspection, the project is currently in the initial setup and research phase. No existing application code was found. All features below are in the planned or research stages.)</em></p>
+<ul>
+<li><strong>Document upload:</strong> [PLANNED]</li>
+<li><strong>AI processing:</strong> [PLANNED]</li>
+<li><strong>Checklist generation:</strong> [PLANNED]</li>
+<li><strong>Chatbot:</strong> [PLANNED]</li>
+<li><strong>Save functionality:</strong> [PLANNED]</li>
+<li><strong>Team sharing:</strong> [PLANNED]</li>
+<li><strong>Node.js server:</strong> [PLANNED]</li>
+<li><strong>Python modules:</strong> [PLANNED]</li>
+<li><strong>Java modules:</strong> [PLANNED]</li>
+<li><strong>Existing voice functionality:</strong> [PLANNED]</li>
+</ul>
+<h2>Technical Stack</h2>
+<p>| Component | Technology | Purpose | Status |
+|-----------|------------|---------|--------|
+| <strong>Frontend</strong> | React / Vue (TBD) | User Interface | PLANNED |
+| <strong>Backend</strong> | Node.js | API &amp; Application Logic | PLANNED |
+| <strong>Data Processing</strong> | Python | Advanced NLP &amp; AI processing | PLANNED |
+| <strong>Enterprise Integration</strong>| Java | Potential enterprise/legacy integration | PLANNED |
+| <strong>LLM</strong> | OpenAI API / Local | Natural language understanding | PLANNED |
+| <strong>Database</strong> | PostgreSQL / MongoDB | Data persistence | PLANNED |
+| <strong>Document Processing</strong>| Tesseract / PyMuPDF | OCR and text extraction | RESEARCH |
+| <strong>Speech-to-Text</strong> | Whisper / whisper.cpp | Voice recognition | RESEARCH |
+| <strong>Text-to-Speech</strong> | Browser TTS / Coqui | Voice generation | RESEARCH |
+| <strong>Agentic Framework</strong> | LangChain / Custom | Agent workflow orchestration | RESEARCH |
+| <strong>Local Inference</strong> | llama.cpp / Ollama | Offline fallback AI | RESEARCH |
+| <strong>Cloud AI</strong> | AWS / GCP / Azure | Online AI compute | PLANNED |
+| <strong>Deployment</strong> | Docker / Kubernetes | Application hosting | PLANNED |</p>
+<h2>Offline Voice Research</h2>
+<p>To address connectivity limitations, an offline voice architecture is researched.</p>
+<p><strong>Online Architecture:</strong><br />
+<code>Microphone</code> ↓ <code>Speech-to-Text</code> ↓ <code>Cloud AI / Existing Chatbot</code> ↓ <code>Text-to-Speech</code> ↓ <code>Speaker</code></p>
+<p><strong>Offline Fallback Architecture:</strong><br />
+<code>Microphone</code> ↓ <code>Local Speech-to-Text</code> ↓ <code>Local AI / Checklist Logic</code> ↓ <code>Local Text-to-Speech</code> ↓ <code>Speaker</code></p>
+<p><strong>Technologies Researched:</strong>
+- <strong>whisper.cpp for offline STT:</strong> [RECOMMENDED] Efficient local C++ implementation.
+- <strong>llama.cpp for local inference:</strong> [RECOMMENDED] Enables running quantized models efficiently.
+- <strong>Ollama as a local option:</strong> [EXPERIMENTAL] Useful for local development and simplified model management.
+- <strong>Quantized local models:</strong> [RECOMMENDED] Essential for performance on low-end hardware.
+- <strong>Browser/OS/local TTS:</strong> [RECOMMENDED] Readily available without heavy dependencies.
+- <strong>Coqui TTS:</strong> [FUTURE] For higher quality, natural-sounding voices.</p>
+<h2>Agentic AI Research</h2>
+<p>A simple chatbot is insufficient for structured task guidance. The system requires an Agentic AI workflow:</p>
+<p><code>User Goal</code> ↓ <code>Understand</code> ↓ <code>Plan</code> ↓ <code>Choose Action</code> ↓ <code>Execute</code> ↓ <code>Update Checklist</code> ↓ <code>Verify</code> ↓ <code>Next Action</code></p>
+<p><strong>Possible Agent Tools:</strong>
+- <code>analyze_document()</code>
+- <code>extract_contract_clauses()</code>
+- <code>detect_payment_terms()</code>
+- <code>detect_penalties()</code>
+- <code>detect_bond_terms()</code>
+- <code>detect_notice_period()</code>
+- <code>detect_missing_information()</code>
+- <code>get_company_information()</code>
+- <code>retrieve_source_evidence()</code>
+- <code>create_student_questions()</code>
+- <code>create_checklist()</code>
+- <code>update_checklist()</code>
+- <code>get_next_pending_task()</code>
+- <code>generate_risk_report()</code></p>
+<p><em>Important:</em> The LLM will NOT have direct, uncontrolled access to perform database operations. It will only utilize tools with predefined boundaries.</p>
+<h2>Contract Analysis Design</h2>
+<p>The structured analysis will break down findings as follows:</p>
+<ul>
+<li><strong>Category:</strong> e.g., financial, legal, operational</li>
+<li><strong>Description:</strong> Explanation of the clause</li>
+<li><strong>Severity:</strong> low, medium, high</li>
+<li><strong>Evidence:</strong> Exact text snippet</li>
+<li><strong>Page/section:</strong> Location in document</li>
+<li><strong>Confidence:</strong> AI confidence score (0.0 - 1.0)</li>
+<li><strong>Recommended action:</strong> Actionable step for the student</li>
+</ul>
+<p><strong>Example JSON Finding:</strong>
+<code>json
+{
+  "category": "financial",
+  "finding": "Potential payment obligation detected",
+  "severity": "medium",
+  "evidence": "Relevant contract clause",
+  "page": 3,
+  "confidence": 0.91,
+  "recommended_action": "Ask the organization whether the payment is mandatory and refundable."
+}</code>
+<em>Note:</em> The AI system will NOT automatically label any organization as fraudulent. It provides objective analysis of text.</p>
+<h2>Company Verification Research</h2>
+<p>Company verification relies on primary sources (government databases, regulatory bodies) with secondary sources providing context.</p>
+<p><strong>Data Attributes:</strong>
+- Company name
+- Legal/company identifier
+- Registration status
+- State
+- Registration authority
+- Official website
+- Source
+- Source URL
+- Verification date
+- Verification status</p>
+<p><strong>Verification Nuance:</strong>
+Company verification is distinct from contract risk analysis.
+"Company registration information was found" is NOT equivalent to "This company is safe."</p>
+<h2>Data Architecture</h2>
+<p><code>mermaid
+erDiagram
+    User ||--o{ ContractAnalysis : performs
+    User ||--o{ Share : creates
+    ContractAnalysis ||--o{ RiskFinding : contains
+    ContractAnalysis ||--|{ Checklist : generates
+    Checklist ||--o{ ChecklistItem : contains
+    RiskFinding ||--|| SourceEvidence : backed_by
+    ContractAnalysis }|--|| Company : references
+    Company ||--o{ VerificationRecord : has</code></p>
+<p><strong>Additional Considerations:</strong>
+- Source tracking for all assertions
+- Verification dates strictly logged
+- Exact Source Evidence mapping
+- Versioning for both Documents and Analyses
+- Secure data persistence and share permissions</p>
+<h2>Save &amp; Team Sharing</h2>
+<p><strong>Workflow:</strong>
+<code>Save Checklist</code> ↓ <code>Generate Checklist ID</code> ↓ <code>Store document + analysis + checklist + progress</code> ↓ <code>My Saved Checklists</code> ↓ <code>Open saved checklist</code> ↓ <code>Share</code> ↓ <code>Generate secure Share ID / URL</code> ↓ <code>Team Member opens shared checklist</code></p>
+<p><strong>Permissions:</strong>
+- <strong>OWNER:</strong> View, Edit, Save, Share
+- <strong>TEAM MEMBER:</strong> View, Chat, Voice Assistant, View checklist, Follow tasks</p>
+<p><em>(Note: Collaborative editing/synchronization is considered future/advanced work.)</em></p>
+<h2>Server Health &amp; Recovery</h2>
+<p><strong>Health Endpoint:</strong> <code>GET /api/health</code></p>
+<p><strong>Expected States:</strong>
+- 🟢 Server Online
+- 🟡 Reconnecting
+- 🔴 Server Offline</p>
+<p><strong>Recovery Workflow:</strong>
+<code>Server unavailable</code> ↓ <code>Detect failure</code> ↓ <code>Notify user</code> ↓ <code>Switch to local/basic assistance</code> ↓ <code>Internet/server restored</code> ↓ <code>Resume online mode</code></p>
+<p><em>Voice message example:</em> "The server is currently unavailable. I'm switching to offline mode."</p>
+<h2>Complete System Architecture</h2>
+<p><code>text
+              AI DOCUMENT ASSISTANT
+                       │
+   ┌───────────────────┼───────────────────┐
+   │                   │                   │
+DOCUMENT             AGENT               TEAM
+   │                   │                   │
+Upload / Scan    Planner / Tools    Save / Share
+   │                   │                   │
+   ▼                   ▼                   ▼
+AI Processing   Execute / Verify    Collaboration
+   │                   ▼                   │
+Contract Analysis      │                   │
+   │                   │                   │
+   └──────────┬────────┘                   ▼
+          CHECKLIST                        │
+              ▼                            │
+       VOICE ASSISTANT                     │
+   ┌─────────┴─────────┐                   │
+   │                   │                   │
+ONLINE              OFFLINE                │
+Cloud AI            Local AI               │
+   └─────────┬─────────┘                   ▼
+       User Guidance</code></p>
+<h2>Development Roadmap</h2>
+<ul>
+<li><strong>Phase 1 — Existing System Freeze:</strong> [PLANNED] Set up foundational repo, structure, and docs.</li>
+<li><strong>Phase 2 — Voice Assistant MVP:</strong> [PLANNED] Basic online STT/TTS interaction.</li>
+<li><strong>Phase 3 — Offline Voice Layer:</strong> [PLANNED] Integrate local whisper/llama capabilities.</li>
+<li><strong>Phase 4 — Agentic AI Layer:</strong> [PLANNED] Implement LangChain/Custom agent tools.</li>
+<li><strong>Phase 5 — Document Context:</strong> [PLANNED] Complete OCR and text extraction pipelines.</li>
+<li><strong>Phase 6 — Error &amp; Recovery:</strong> [PLANNED] Build robust network failure transitions.</li>
+<li><strong>Phase 7 — Team Collaboration:</strong> [PLANNED] Enable sharing and read-only teammate views.</li>
+<li><strong>Phase 8 — Product Polish:</strong> [PLANNED] UI/UX improvements and responsive design.</li>
+<li><strong>Phase 9 — Testing Matrix:</strong> [PLANNED] Comprehensive unit and integration testing.</li>
+<li><strong>Phase 10 — Deployment &amp; Demo:</strong> [PLANNED] Hosting and final presentations.</li>
+</ul>
+<h2>Testing Matrix</h2>
+<p>| Situation | Expected Result | Status |
+|-----------|-----------------|--------|
+| Internet ON | Normal cloud-based operations | NOT TESTED |
+| Internet OFF | Switch to local inference mode | NOT TESTED |
+| Server DOWN | Switch to local fallback mode | NOT TESTED |
+| Internet restored | Auto-resume cloud operations | NOT TESTED |
+| Mic denied | Graceful failure, prompt text input | NOT TESTED |
+| Long document | Paginated or batched AI processing | NOT TESTED |
+| Checklist update | State saved accurately in DB | NOT TESTED |
+| Team link | View-only/Team access correctly enforced | NOT TESTED |
+| Saved checklist | Loads historical state successfully | NOT TESTED |
+| AI failure | Helpful error message provided | NOT TESTED |
+| Database failure | Caches locally, alerts user | NOT TESTED |
+| Invalid document | Rejects gracefully with instructions | NOT TESTED |
+| Company source unavailable| Skips external verification gracefully | NOT TESTED |</p>
+<h2>Hackathon Demo Flow</h2>
+<ol>
+<li>Student uploads contract.</li>
+<li>AI analyzes it.</li>
+<li>Potential payment clause is detected.</li>
+<li>Evidence is displayed.</li>
+<li>Company information is checked.</li>
+<li>Risk/clarification report is generated.</li>
+<li>Checklist is created.</li>
+<li>Student asks chatbot.</li>
+<li>Student uses voice assistant.</li>
+<li>Checklist progress changes.</li>
+<li>Analysis is saved.</li>
+<li>Share link is generated.</li>
+<li>Team member opens it.</li>
+<li>Internet is disconnected.</li>
+<li>Offline fallback is demonstrated.</li>
+<li>Internet reconnects.</li>
+<li>Online mode resumes.</li>
+</ol>
+<p><em>(Note: Currently entirely conceptual/planned. Not yet functional for demo.)</em></p>
+<h2>Innovation</h2>
+<p><strong>Core Innovation:</strong>
+- Document-to-action workflow
+- Agentic task guidance
+- Evidence-backed contract analysis
+- Offline fallback capabilities
+- Voice interaction</p>
+<p><strong>Product Polish Features:</strong>
+- Student-friendly explanations
+- Company verification
+- Persistent checklist state
+- Team collaboration</p>
+<h2>Limitations</h2>
+<ul>
+<li>AI analysis is not legal advice.</li>
+<li>Company registration does not guarantee trustworthiness.</li>
+<li>External verification depends on source availability.</li>
+<li>Offline mode has limited capabilities compared to cloud AI.</li>
+<li>AI may require human verification for complex clauses.</li>
+<li>Fresh online company verification is unavailable offline.</li>
+<li>Advanced conflict-free synchronization for collaboration is future work.</li>
+</ul>
+<h2>Future Scope</h2>
+<ul>
+<li>Better local LLM integration</li>
+<li>Better offline STT models</li>
+<li>Natural local TTS</li>
+<li>Multilingual Indian-language voice</li>
+<li>Improved company verification</li>
+<li>Source credibility scoring</li>
+<li>More regulatory integrations</li>
+<li>Advanced collaboration (multi-edit)</li>
+<li>Offline-to-online synchronization</li>
+<li>Mobile application</li>
+<li>Browser extension</li>
+<li>Automated contract comparison</li>
+<li>Historical clause analysis</li>
+</ul>
