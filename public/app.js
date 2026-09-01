@@ -1,13 +1,18 @@
 /**
  * app.js
  * Client controller for Student Contract Transparency Assistant and Government Process Agent.
+ * Designed with Apple + Stripe + Linear + Vercel SaaS UI architecture.
  * Preserves 100% of existing API contracts, backend handlers, and state logic.
  */
 
 // Global Application State
 const state = {
-  activeMode: 'contract', // Default primary mode is Student Contract Transparency Assistant
+  activeMode: 'contract', // Default primary mode: Student Contract Transparency Assistant
+  theme: localStorage.getItem('theme') || 'light',
   sessionId: 'session_' + Date.now(),
+  stats: {
+    totalDocsProcessed: 1
+  },
   gov: {
     goal: '',
     process: null,
@@ -30,21 +35,24 @@ const state = {
   serverOnline: true
 };
 
-// DOM Elements Registry
+// DOM Registry
 const elements = {
-  // Mode Switcher & Global Header
+  // Theme & Mode Switcher
+  themeToggleBtn: document.getElementById('themeToggleBtn'),
   modeGovBtn: document.getElementById('modeGovBtn'),
   modeContractBtn: document.getElementById('modeContractBtn'),
-  govLandingHero: document.getElementById('govLandingHero'),
   govViewContainer: document.getElementById('govViewContainer'),
   contractViewContainer: document.getElementById('contractViewContainer'),
   appHeaderTitle: document.getElementById('appHeaderTitle'),
   appHeaderSubtitle: document.getElementById('appHeaderSubtitle'),
 
-  // Health Status
+  // Health Status & Widgets
   healthBadge: document.getElementById('healthBadge'),
   healthDot: document.getElementById('healthDot'),
   healthStatusText: document.getElementById('healthStatusText'),
+  widgetTotalDocs: document.getElementById('widgetTotalDocs'),
+  widgetRiskLevel: document.getElementById('widgetRiskLevel'),
+  widgetTasksRatio: document.getElementById('widgetTasksRatio'),
 
   // Government Process Agent Elements
   goalInputField: document.getElementById('goalInputField'),
@@ -98,7 +106,7 @@ const elements = {
   loadingStepSub: document.getElementById('loadingStepSub'),
   loadingProgressFill: document.getElementById('loadingProgressFill'),
   
-  // Findings & Workspace
+  // Findings & Summary
   docNameText: document.getElementById('docNameText'),
   docTypeBadge: document.getElementById('docTypeBadge'),
   findingsContainer: document.getElementById('findingsContainer'),
@@ -143,25 +151,51 @@ const elements = {
   saveCustomTaskBtn: document.getElementById('saveCustomTaskBtn')
 };
 
-// Application Initialization
+// Application Init
 document.addEventListener('DOMContentLoaded', async () => {
+  setupTheme();
   setupModeSwitcher();
   setupGovAgent();
   setupContractAssistant();
   setupSpeechRecognition();
   setupUniversalModals();
 
-  // Start in Primary Contract Analyzer Mode
   switchMode('contract');
-
   await checkServerHealth();
   setInterval(checkServerHealth, 15000);
 });
 
-// --- 1. MODE SWITCHER ---
+// --- 1. THEME SWITCHER (LIGHT / DARK MODE) ---
+function setupTheme() {
+  document.documentElement.setAttribute('data-theme', state.theme);
+  updateThemeIcon();
+
+  if (elements.themeToggleBtn) {
+    elements.themeToggleBtn.addEventListener('click', () => {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', state.theme);
+      localStorage.setItem('theme', state.theme);
+      updateThemeIcon();
+    });
+  }
+}
+
+function updateThemeIcon() {
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  if (state.theme === 'dark') {
+    if (sunIcon) sunIcon.style.display = 'none';
+    if (moonIcon) moonIcon.style.display = 'block';
+  } else {
+    if (sunIcon) sunIcon.style.display = 'block';
+    if (moonIcon) moonIcon.style.display = 'none';
+  }
+}
+
+// --- 2. MODE SWITCHER ---
 function setupModeSwitcher() {
-  elements.modeGovBtn.addEventListener('click', () => switchMode('gov'));
-  elements.modeContractBtn.addEventListener('click', () => switchMode('contract'));
+  if (elements.modeGovBtn) elements.modeGovBtn.addEventListener('click', () => switchMode('gov'));
+  if (elements.modeContractBtn) elements.modeContractBtn.addEventListener('click', () => switchMode('contract'));
 }
 
 function switchMode(mode) {
@@ -169,45 +203,55 @@ function switchMode(mode) {
   if (mode === 'gov') {
     elements.modeGovBtn.classList.add('active');
     elements.modeContractBtn.classList.remove('active');
-    if (elements.govLandingHero) elements.govLandingHero.style.display = 'block';
     if (elements.govViewContainer) elements.govViewContainer.style.display = 'block';
     if (elements.contractViewContainer) elements.contractViewContainer.style.display = 'none';
-    elements.appHeaderTitle.textContent = 'Government Process Automation Agent';
+    elements.appHeaderTitle.textContent = 'Government Process Agent';
     elements.appHeaderSubtitle.textContent = 'Action-Oriented Real-World Services & Verified Portals';
   } else {
     elements.modeGovBtn.classList.remove('active');
     elements.modeContractBtn.classList.add('active');
-    if (elements.govLandingHero) elements.govLandingHero.style.display = 'none';
     if (elements.govViewContainer) elements.govViewContainer.style.display = 'none';
     if (elements.contractViewContainer) elements.contractViewContainer.style.display = 'block';
-    elements.appHeaderTitle.textContent = 'Student Contract Transparency Assistant';
+    elements.appHeaderTitle.textContent = 'Student Contract Transparency';
     elements.appHeaderSubtitle.textContent = 'Protecting Students from Hidden Obligations';
   }
 }
 
-// --- 2. SERVER HEALTH ---
+// --- 3. SERVER HEALTH & DASHBOARD WIDGETS ---
 async function checkServerHealth() {
   try {
     const res = await fetch('/api/health');
     if (res.ok) {
       state.serverOnline = true;
       elements.healthStatusText.textContent = 'Cloud AI Active';
-      elements.healthDot.style.background = '#22c55e';
-      elements.healthBadge.style.background = '#f0fdf4';
-      elements.healthBadge.style.color = '#166534';
+      elements.healthDot.style.background = 'var(--success)';
+      elements.healthBadge.style.background = 'var(--success-bg)';
+      elements.healthBadge.style.color = 'var(--success)';
     } else {
       throw new Error('Server non-200');
     }
   } catch (err) {
     state.serverOnline = false;
     elements.healthStatusText.textContent = 'Offline Local Mode';
-    elements.healthDot.style.background = '#f59e0b';
-    elements.healthBadge.style.background = '#fffbeb';
-    elements.healthBadge.style.color = '#92400e';
+    elements.healthDot.style.background = 'var(--warning)';
+    elements.healthBadge.style.background = 'var(--warning-bg)';
+    elements.healthBadge.style.color = 'var(--warning)';
   }
 }
 
-// --- 3. CONTRACT ASSISTANT CONTROLLER ---
+function updateDashboardWidgets() {
+  if (elements.widgetTotalDocs) elements.widgetTotalDocs.textContent = state.stats.totalDocsProcessed;
+  
+  if (state.contract.analysis && elements.widgetRiskLevel) {
+    elements.widgetRiskLevel.textContent = state.contract.analysis.summary.overallRiskScore || 'Analyzed';
+  }
+
+  const total = state.contract.checklist.length;
+  const completed = state.contract.checklist.filter(i => i.status === 'Completed').length;
+  if (elements.widgetTasksRatio) elements.widgetTasksRatio.textContent = `${completed} / ${total}`;
+}
+
+// --- 4. CONTRACT TRANSPARENCY ASSISTANT ---
 function setupContractAssistant() {
   // Tab Navigation
   elements.tabButtons.forEach(btn => {
@@ -222,14 +266,14 @@ function setupContractAssistant() {
     });
   });
 
-  // Textarea Char Counter
+  // Textarea Counter
   if (elements.pastedText) {
     elements.pastedText.addEventListener('input', () => {
       elements.charCounter.textContent = `${elements.pastedText.value.length} / 50000`;
     });
   }
 
-  // File Upload Handlers
+  // Upload Dropzone
   if (elements.browseBtn) {
     elements.browseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -284,16 +328,16 @@ function setupContractAssistant() {
         state.contract.filename = 'Pasted Contract Terms';
         performContractAnalysis({ text, filename: state.contract.filename });
       } else {
-        alert('Please select a document file or paste contract text to analyze.');
+        alert('Please select a contract file or paste document text to analyze.');
       }
     });
   }
 
-  // Sample Contract Cards
-  document.querySelectorAll('#quickSampleChipsContainer .sample-card-item').forEach(card => {
+  // Feature / Sample Cards
+  document.querySelectorAll('#quickSampleChipsContainer .feature-card').forEach(card => {
     card.addEventListener('click', async () => {
       const sampleId = card.getAttribute('data-id');
-      showProgressiveLoading('Loading sample contract...');
+      showProgressiveLoading('Loading sample document...');
       try {
         const res = await fetch(`/api/samples/${sampleId}`);
         const sample = await res.json();
@@ -309,23 +353,20 @@ function setupContractAssistant() {
     });
   });
 
-  // Severity Filter
+  // Filter
   if (elements.severityFilter) {
     elements.severityFilter.addEventListener('change', renderContractFindings);
   }
 
-  // Chatbot
-  if (elements.sendChatBtn) {
-    elements.sendChatBtn.addEventListener('click', sendContractChatMessage);
-  }
+  // Chat
+  if (elements.sendChatBtn) elements.sendChatBtn.addEventListener('click', sendContractChatMessage);
   if (elements.chatInput) {
     elements.chatInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') sendContractChatMessage();
     });
   }
 
-  // Suggested Prompts
-  document.querySelectorAll('.chat-window .prompt-chip').forEach(chip => {
+  document.querySelectorAll('.chat-card .prompt-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const prompt = chip.getAttribute('data-prompt');
       elements.chatInput.value = prompt;
@@ -333,7 +374,7 @@ function setupContractAssistant() {
     });
   });
 
-  // Add Custom Task Modal
+  // Custom Task Modal
   if (elements.addCustomTaskBtn) {
     elements.addCustomTaskBtn.addEventListener('click', () => {
       elements.customTaskTitle.value = '';
@@ -354,8 +395,8 @@ function setupContractAssistant() {
   }
 }
 
-// Progressive Loading Visual Animation
-function showProgressiveLoading(initialText = 'Analyzing document...') {
+// Progressive Loading Animation
+function showProgressiveLoading(initialText = 'Analyzing contract...') {
   elements.analyzeBtn.disabled = true;
   if (elements.analyzeBtnText) elements.analyzeBtnText.textContent = '⏳ Analyzing...';
   if (elements.analysisLoadingState) {
@@ -379,7 +420,7 @@ function hideProgressiveLoading() {
 
 async function handleContractFileUpload(file) {
   showProgressiveLoading(`Uploading ${file.name}...`);
-  updateProgressiveLoading('Reading File...', 'Extracting document text and layout', 40);
+  updateProgressiveLoading('Reading File...', 'Extracting document text & layout', 40);
 
   const formData = new FormData();
   formData.append('file', file);
@@ -430,8 +471,8 @@ function onContractAnalysisComplete(data) {
   state.contract.filename = data.filename;
   state.contract.company = data.company;
   state.contract.checklist = data.analysis.checklist || [];
+  state.stats.totalDocsProcessed++;
 
-  // Automatically switch tab to Obligation Findings for immediate user value
   const btn = document.querySelector('#contractViewContainer .tab-btn[data-tab="tab-findings"]');
   if (btn) btn.click();
 
@@ -440,6 +481,7 @@ function onContractAnalysisComplete(data) {
   renderContractChecklist();
   renderCompanyVerification();
   renderAnalysisTrace();
+  updateDashboardWidgets();
 }
 
 function renderContractSummary() {
@@ -460,7 +502,6 @@ function renderContractSummary() {
     elements.riskScoreBadge.classList.add('risk-score-low');
   }
 
-  // Missing Information Alert
   const missing = state.contract.analysis.missingInformation || [];
   if (missing.length > 0) {
     elements.missingInfoAlert.style.display = 'block';
@@ -484,8 +525,8 @@ function renderContractFindings() {
 
   if (findings.length === 0) {
     elements.findingsContainer.innerHTML = `
-      <div class="empty-state-box">
-        <div class="empty-state-icon">✅</div>
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
         <h3>No findings matching filter</h3>
         <p>There are no contract obligations identified for severity level: <strong>${filter}</strong>.</p>
       </div>
@@ -502,10 +543,10 @@ function renderContractFindings() {
             Category: ${f.category.toUpperCase()} • Section/Page ${f.page || 1} • Amount: ${escapeHtml(f.amount)}
           </div>
         </div>
-        <span class="badge badge-${f.severity}">${f.severity} Risk</span>
+        <span class="badge badge-${f.severity === 'high' ? 'red' : f.severity === 'medium' ? 'amber' : 'green'}">${f.severity} Risk</span>
       </div>
 
-      <!-- Structured 3-Part Grid: Original Clause vs In Simple Words vs What You Should Check -->
+      <!-- Structured 3-Part Grid -->
       <div class="finding-three-grid">
         <div class="finding-box-part box-original">
           <div class="box-part-title">📄 Original Clause</div>
@@ -538,10 +579,10 @@ function renderContractChecklist() {
 
   if (total === 0) {
     elements.checklistContainer.innerHTML = `
-      <div class="empty-state-box">
-        <div class="empty-state-icon">✅</div>
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
         <h3>Checklist is Empty</h3>
-        <p>Upload a document to generate your personalized action checklist.</p>
+        <p>Upload a document to generate your personalized step-by-step action checklist.</p>
       </div>
     `;
     return;
@@ -549,15 +590,15 @@ function renderContractChecklist() {
 
   elements.checklistContainer.innerHTML = state.contract.checklist.map(item => `
     <div class="checklist-item" data-id="${item.id}">
-      <input type="checkbox" class="checklist-checkbox contract-task-cb" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
-      <div class="checklist-body">
+      <input type="checkbox" class="checklist-cb contract-task-cb" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
+      <div style="flex: 1;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span class="checklist-task-title" style="${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
+          <span style="font-weight: 700; font-size: 0.925rem; color: var(--text-main); ${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
             ${escapeHtml(item.task)}
           </span>
-          <span class="badge ${item.priority === 'High' ? 'badge-high' : 'badge-medium'}">${item.priority || 'Medium'}</span>
+          <span class="badge ${item.priority === 'High' ? 'badge-red' : 'badge-amber'}">${item.priority || 'Medium'}</span>
         </div>
-        <p class="checklist-desc">${escapeHtml(item.description)}</p>
+        <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0.15rem;">${escapeHtml(item.description)}</p>
       </div>
     </div>
   `).join('');
@@ -569,6 +610,7 @@ function renderContractChecklist() {
         t.id === id ? { ...t, status: e.target.checked ? 'Completed' : 'Pending' } : t
       );
       renderContractChecklist();
+      updateDashboardWidgets();
     });
   });
 }
@@ -595,13 +637,14 @@ function addCustomChecklistTask() {
   state.contract.checklist.push(newTask);
   elements.addTaskModal.classList.remove('open');
   renderContractChecklist();
+  updateDashboardWidgets();
 }
 
 function renderCompanyVerification() {
   if (!state.contract.company) {
     elements.verificationContent.innerHTML = `
-      <div class="empty-state-box">
-        <div class="empty-state-icon">🏛️</div>
+      <div class="empty-state">
+        <div class="empty-icon">🏛️</div>
         <h3>No Entity Verified Yet</h3>
         <p>Upload a document to automatically verify corporate registration records.</p>
       </div>
@@ -611,18 +654,18 @@ function renderCompanyVerification() {
 
   const c = state.contract.company;
   elements.verificationContent.innerHTML = `
-    <div class="verification-card">
-      <div class="verification-header">
+    <div style="background: var(--bg-card-solid); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.35rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <div>
-          <h3 style="font-size: 1.15rem; color: #0f172a;">${escapeHtml(c.companyName)}</h3>
+          <h3 style="font-size: 1.15rem; color: var(--text-main);">${escapeHtml(c.companyName)}</h3>
           <span style="font-size: 0.8rem; color: var(--text-muted);">Queried Identifier: ${escapeHtml(c.queriedName)}</span>
         </div>
-        <span class="badge ${c.verified ? 'badge-low' : 'badge-medium'}">
+        <span class="badge ${c.verified ? 'badge-green' : 'badge-amber'}">
           ${c.verified ? 'VERIFIED REGISTRATION' : 'NEEDS PUBLIC CHECK'}
         </span>
       </div>
 
-      <div class="verification-field-grid">
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.875rem; margin-bottom: 1rem;">
         <div><strong>Corporate Identification Number (CIN):</strong> ${escapeHtml(c.cin)}</div>
         <div><strong>Registration Status:</strong> ${escapeHtml(c.registrationStatus)}</div>
         <div><strong>State / Jurisdiction:</strong> ${escapeHtml(c.state)}</div>
@@ -631,7 +674,7 @@ function renderCompanyVerification() {
         <div><strong>Verification Date:</strong> ${c.verificationDate}</div>
       </div>
 
-      <div class="verification-disclaimer">
+      <div style="background: var(--warning-bg); border: 1px solid rgba(245,158,11,0.3); color: #92400E; border-radius: 8px; padding: 0.85rem; font-size: 0.825rem; line-height: 1.5;">
         ${escapeHtml(c.disclaimer)}
       </div>
     </div>
@@ -658,7 +701,7 @@ async function sendContractChatMessage() {
   elements.chatInput.value = '';
 
   const userBubble = document.createElement('div');
-  userBubble.className = 'chat-bubble chat-user';
+  userBubble.className = 'chat-bubble user-bubble';
   userBubble.textContent = msg;
   elements.chatMessages.appendChild(userBubble);
   elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
@@ -680,21 +723,21 @@ async function sendContractChatMessage() {
     if (!res.ok) throw new Error(data.error || 'Failed to fetch response');
 
     const botBubble = document.createElement('div');
-    botBubble.className = 'chat-bubble chat-assistant';
+    botBubble.className = 'chat-bubble assistant-bubble';
     botBubble.innerHTML = formatMarkdownText(data.reply);
     elements.chatMessages.appendChild(botBubble);
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
   } catch (err) {
     const errorBubble = document.createElement('div');
-    errorBubble.className = 'chat-bubble chat-assistant';
-    errorBubble.style.background = '#fef2f2';
-    errorBubble.style.color = '#991b1b';
+    errorBubble.className = 'chat-bubble assistant-bubble';
+    errorBubble.style.background = 'var(--danger-bg)';
+    errorBubble.style.color = 'var(--danger)';
     errorBubble.textContent = 'Error: ' + err.message;
     elements.chatMessages.appendChild(errorBubble);
   }
 }
 
-// --- 4. PRESERVED GOVERNMENT AGENT FUNCTIONS ---
+// --- 5. PRESERVED GOVERNMENT AGENT FUNCTIONS ---
 function setupGovAgent() {
   if (elements.startGoalBtn) {
     elements.startGoalBtn.addEventListener('click', () => {
@@ -712,7 +755,7 @@ function setupGovAgent() {
     });
   }
 
-  document.querySelectorAll('.landing-prompt-chip').forEach(chip => {
+  document.querySelectorAll('.chips-row .landing-prompt-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const goal = chip.getAttribute('data-goal');
       elements.goalInputField.value = goal;
@@ -820,15 +863,15 @@ function renderGovProcessView() {
 
   elements.govDocCountBadge.textContent = state.gov.requiredDocs.length;
   elements.govRequiredDocsContainer.innerHTML = state.gov.requiredDocs.map(doc => `
-    <div class="doc-intel-item ${doc.userProvided ? 'ready' : doc.mandatory ? 'mandatory' : 'conditional'}" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem;">
+    <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem;">
       <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">
         ${doc.name}
-        <span class="badge ${doc.userProvided ? 'badge-low' : doc.mandatory ? 'badge-high' : 'badge-medium'}" style="margin-left: 0.4rem;">
+        <span class="badge ${doc.userProvided ? 'badge-green' : doc.mandatory ? 'badge-red' : 'badge-amber'}" style="margin-left: 0.4rem;">
           ${doc.statusLabel}
         </span>
       </div>
       <div style="font-size: 0.8rem; color: var(--text-muted);"><strong>Why needed:</strong> ${doc.whyNeeded}</div>
-      <div style="font-size: 0.775rem; color: #475569; margin-top: 0.2rem;"><strong>Obtain at:</strong> ${doc.whereToObtain}</div>
+      <div style="font-size: 0.775rem; color: var(--text-main); margin-top: 0.2rem;"><strong>Obtain at:</strong> ${doc.whereToObtain}</div>
     </div>
   `).join('');
 
@@ -847,15 +890,15 @@ function renderGovChecklist() {
 
   elements.govChecklistContainer.innerHTML = state.gov.checklist.map(item => `
     <div class="checklist-item" data-id="${item.id}">
-      <input type="checkbox" class="checklist-checkbox gov-task-cb" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
-      <div class="checklist-body">
+      <input type="checkbox" class="checklist-cb gov-task-cb" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
+      <div style="flex: 1;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-          <span class="checklist-task-title" style="${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
+          <span style="font-weight: 700; font-size: 0.9rem; ${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
             Step ${item.stepNumber || ''}: ${item.task}
           </span>
-          <span class="badge ${item.priority === 'High' ? 'badge-high' : 'badge-medium'}">${item.priority}</span>
+          <span class="badge ${item.priority === 'High' ? 'badge-red' : 'badge-amber'}">${item.priority}</span>
         </div>
-        <p class="checklist-desc">${item.description}</p>
+        <p style="font-size: 0.825rem; color: var(--text-muted);">${item.description}</p>
       </div>
     </div>
   `).join('');
@@ -871,10 +914,10 @@ function renderGovChecklist() {
 
 function renderGovFormFields() {
   elements.govFormFieldsContainer.innerHTML = state.gov.formFields.map(f => `
-    <div class="form-field-row">
-      <div class="form-field-header">
-        <span>${f.label} ${f.safeToFill ? '' : '<span style="color: #dc2626;">*</span>'}</span>
-        <span class="field-source-badge">${f.source} (${(f.confidence * 100).toFixed(0)}% conf)</span>
+    <div style="margin-bottom: 0.85rem;">
+      <div style="display: flex; justify-content: space-between; font-size: 0.825rem; font-weight: 600; margin-bottom: 0.25rem;">
+        <span>${f.label} ${f.safeToFill ? '' : '<span style="color: var(--danger);">*</span>'}</span>
+        <span style="font-size: 0.725rem; color: var(--primary);">${f.source} (${(f.confidence * 100).toFixed(0)}% conf)</span>
       </div>
       <input type="text" class="input-text gov-form-input ${f.value ? 'field-prefilled' : ''}" 
         name="${f.fieldName}" value="${escapeHtml(f.value)}" placeholder="${f.placeholder || 'Enter value...'}">
@@ -917,8 +960,8 @@ function openGovReviewModal() {
   });
 
   elements.govReviewFieldsList.innerHTML = state.gov.formFields.map(f => `
-    <div class="review-field-item" style="margin-bottom: 0.5rem;">
-      <strong>${f.label}:</strong> <span>${currentValues[f.fieldName] || '<em style="color: #dc2626;">Missing</em>'}</span>
+    <div style="margin-bottom: 0.5rem; font-size: 0.85rem;">
+      <strong>${f.label}:</strong> <span>${currentValues[f.fieldName] || '<em style="color: var(--danger);">Missing</em>'}</span>
     </div>
   `).join('');
 
@@ -972,11 +1015,11 @@ function renderGovTimeline() {
   }
 
   elements.govTimelineBox.innerHTML = state.gov.timeline.map(ev => `
-    <div class="timeline-event-item">
-      <span class="timeline-time">${ev.timestamp.split('T')[1].slice(0, 8)}</span>
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+      <span style="color: #38bdf8;">${ev.timestamp.split('T')[1].slice(0, 8)}</span>
       <div>
-        <span class="timeline-title">${ev.type}</span>
-        <div class="timeline-desc">${typeof ev.details === 'object' ? JSON.stringify(ev.details) : ev.details}</div>
+        <strong style="color: #f8fafc;">${ev.type}</strong>
+        <div style="font-size: 0.775rem; color: #cbd5e1;">${typeof ev.details === 'object' ? JSON.stringify(ev.details) : ev.details}</div>
       </div>
     </div>
   `).join('');
@@ -1001,7 +1044,7 @@ async function handleGovVoiceQuery(query) {
     });
 
     const data = await res.json();
-    elements.govVoiceLog.innerHTML += `<div style="color: #0284c7;"><strong>Assistant:</strong> ${data.reply}</div>`;
+    elements.govVoiceLog.innerHTML += `<div style="color: var(--primary);"><strong>Assistant:</strong> ${data.reply}</div>`;
     elements.govVoiceStatusText.textContent = '🔊 Speaking response...';
     speakAloud(data.reply);
   } catch (err) {
@@ -1009,7 +1052,7 @@ async function handleGovVoiceQuery(query) {
   }
 }
 
-// --- 5. SPEECH RECOGNITION & SYNTHESIS ---
+// --- 6. SPEECH RECOGNITION & SYNTHESIS ---
 function setupSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return;
@@ -1069,9 +1112,8 @@ function speakAloud(text) {
   }
 }
 
-// --- 6. UNIVERSAL ACTIONS & MODALS ---
+// --- 7. UNIVERSAL ACTIONS & MODALS ---
 function setupUniversalModals() {
-  // Save State Action
   if (elements.saveBtn) {
     elements.saveBtn.addEventListener('click', async () => {
       try {
@@ -1095,7 +1137,6 @@ function setupUniversalModals() {
     });
   }
 
-  // Share Action
   if (elements.shareBtn) {
     elements.shareBtn.addEventListener('click', async () => {
       try {
@@ -1133,7 +1174,6 @@ function setupUniversalModals() {
     });
   }
 
-  // Export Markdown Report Action
   if (elements.exportMdBtn) {
     elements.exportMdBtn.addEventListener('click', exportMarkdownReport);
   }
@@ -1203,7 +1243,7 @@ function exportMarkdownReport() {
   URL.revokeObjectURL(url);
 }
 
-// Utility Helpers
+// Helpers
 function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
