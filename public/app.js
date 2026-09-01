@@ -551,6 +551,14 @@ async function handleContractFileUpload(file) {
   showProgressiveLoading(`Uploading ${file.name}...`);
   updateProgressiveLoading('Reading File...', 'Extracting document text & layout', 40);
 
+  // If text file, read text locally first as robust backup
+  let localText = '';
+  if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+    try {
+      localText = await file.text();
+    } catch (_) {}
+  }
+
   const formData = new FormData();
   formData.append('file', file);
 
@@ -563,8 +571,27 @@ async function handleContractFileUpload(file) {
       hideProgressiveLoading();
     }, 400);
   } catch (err) {
+    // If upload API returned 404 and we have local text, try analyzing JSON text payload
+    if (localText && err.message.includes('404')) {
+      try {
+        const data = await fetchJson('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: localText, filename: file.name })
+        });
+        onContractAnalysisComplete(data);
+        hideProgressiveLoading();
+        return;
+      } catch (_) {}
+    }
+
     hideProgressiveLoading();
-    alert('Upload failed: ' + err.message);
+
+    if (err.message.includes('404') && window.location.hostname.includes('workers.dev')) {
+      alert(`⚠️ Cloudflare Workers is hosting the static frontend only.\n\nTo use full document upload & AI analysis, open your Node.js backend on Render:\nhttps://student-contract--transparency-assistent.onrender.com\n\nOr paste your contract text directly into the text box below.`);
+    } else {
+      alert('Upload failed: ' + err.message);
+    }
   }
 }
 
