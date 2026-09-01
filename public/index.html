@@ -504,6 +504,25 @@
           <button class="landing-prompt-chip" data-goal="I need an Income and Domicile Certificate on Aaple Sarkar">🏛️ Income / Domicile Certificate</button>
           <button class="landing-prompt-chip" data-goal="I don't know what documents I need for land registration">❓ Document Requirements Discovery</button>
         </div>
+
+        <!-- Gov Document Upload Zone -->
+        <div style="margin-top: 1.25rem; background: rgba(255,255,255,0.07); border: 2px dashed rgba(148,163,184,0.35); border-radius: 14px; padding: 1.25rem; text-align: center;" id="govUploadZone">
+          <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.5rem;">📎 Upload your existing document to analyse &amp; auto-fill form fields</div>
+          <label style="cursor: pointer;">
+            <span class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2);">📂 Upload Document (PDF / TXT / DOCX)</span>
+            <input type="file" id="govFileInput" accept=".pdf,.txt,.docx,.doc" style="display:none;">
+          </label>
+          <div id="govUploadStatus" style="font-size: 0.8rem; color: #38bdf8; margin-top: 0.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- n8n-Style Workflow Visualizer (shown after goal is started) -->
+      <div id="govWorkflowVisualizer" style="display: none; margin: 1.5rem 0;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">⚡ Process Workflow</h3>
+          <span class="badge badge-blue">AI Guided</span>
+        </div>
+        <div id="govWorkflowNodes" style="display: flex; flex-wrap: wrap; gap: 0; align-items: flex-start;"></div>
       </div>
 
       <!-- Active Process Banner -->

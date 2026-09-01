@@ -906,6 +906,46 @@ function setupGovAgent() {
       handleGovVoiceQuery(query);
     });
   });
+
+  // Government Agent Document Upload
+  const govFileInput = document.getElementById('govFileInput');
+  if (govFileInput) {
+    govFileInput.addEventListener('change', async (e) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      const uploadStatus = document.getElementById('govUploadStatus');
+      const uploadZone = document.getElementById('govUploadZone');
+      uploadZone.classList.add('uploading');
+      uploadStatus.textContent = `⏳ Uploading & analysing ${file.name}...`;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const data = await fetchJson('/api/analyze', { method: 'POST', body: formData });
+
+        // Store document text so gov agent can use it
+        state.contract.documentText = data.documentText || '';
+        state.contract.filename = data.filename || file.name;
+        state.contract.analysis = data.analysis;
+
+        uploadStatus.textContent = `✅ ${file.name} analysed — document context ready for form auto-fill`;
+        uploadZone.classList.remove('uploading');
+
+        // If a goal is already active, re-run to incorporate doc context
+        const currentGoal = elements.goalInputField ? elements.goalInputField.value.trim() : '';
+        if (currentGoal && state.gov.process) {
+          addGovTimelineEvent('DOCUMENT_UPLOADED', `Document "${file.name}" analysed and context loaded.`);
+          renderGovTimeline();
+        }
+      } catch (err) {
+        uploadStatus.textContent = `❌ Upload failed: ${err.message}`;
+        uploadZone.classList.remove('uploading');
+      }
+
+      // Reset input so same file can be re-selected
+      govFileInput.value = '';
+    });
+  }
 }
 
 async function executeGovGoal(goal, clarifiedState = null) {
@@ -1024,8 +1064,71 @@ function renderGovProcessView() {
   renderGovChecklist();
   renderGovFormFields();
   renderGovTimeline();
+  renderGovWorkflow(); // n8n-style visual workflow
 
   speakAloud(`I found the official government process: ${p.title}. You have ${state.gov.requiredDocs.length} required documents.`);
+}
+
+// --- n8n-STYLE WORKFLOW VISUALIZER ---
+function renderGovWorkflow() {
+  const visualizer = document.getElementById('govWorkflowVisualizer');
+  const container = document.getElementById('govWorkflowNodes');
+  if (!visualizer || !container) return;
+
+  // Build workflow steps from checklist or use a default set
+  const steps = state.gov.checklist.length > 0
+    ? state.gov.checklist.map((item, i) => ({
+        icon: item.status === 'Completed' ? '✅' : i === 0 ? '▶️' : item.priority === 'High' ? '📋' : '📌',
+        label: item.task,
+        state: item.status === 'Completed' ? 'completed' : i === 0 ? 'active' : 'pending',
+        stepNumber: item.stepNumber || i + 1
+      }))
+    : [
+        { icon: '🎯', label: 'Goal Received', state: 'completed', stepNumber: 1 },
+        { icon: '📄', label: 'Upload Documents', state: state.contract.documentText ? 'completed' : 'active', stepNumber: 2 },
+        { icon: '📝', label: 'Fill Form Fields', state: 'pending', stepNumber: 3 },
+        { icon: '🔍', label: 'Review Details', state: 'pending', stepNumber: 4 },
+        { icon: '📮', label: 'Submit on Portal', state: 'pending', stepNumber: 5 }
+      ];
+
+  // Find first active / first non-completed to mark as active
+  let firstActive = false;
+  const statedSteps = steps.map(s => {
+    if (s.state === 'completed') return s;
+    if (!firstActive) { firstActive = true; return { ...s, state: 'active' }; }
+    return { ...s, state: 'pending' };
+  });
+
+  container.innerHTML = statedSteps.map((step, i) => {
+    const isLast = i === statedSteps.length - 1;
+    const nodeClass = `workflow-node node-${step.state}`;
+    const connClass = step.state === 'completed' ? 'conn-done' : step.state === 'active' ? 'conn-active' : '';
+
+    return `
+      <div class="workflow-node-wrapper">
+        <div class="${nodeClass}" title="Step ${step.stepNumber}: ${step.label}">
+          <div class="workflow-node-icon">
+            ${step.icon}
+            <span class="workflow-node-status-dot"></span>
+          </div>
+          <div class="workflow-node-label">${step.label}</div>
+        </div>
+        ${!isLast ? `<div class="workflow-connector ${connClass}"></div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  visualizer.style.display = 'block';
+}
+
+// Helper: add a timeline event to state and re-render
+function addGovTimelineEvent(type, details) {
+  if (!state.gov.timeline) state.gov.timeline = [];
+  state.gov.timeline.push({
+    timestamp: new Date().toISOString(),
+    type,
+    details
+  });
 }
 
 function renderGovChecklist() {
@@ -1054,6 +1157,7 @@ function renderGovChecklist() {
       const id = cb.getAttribute('data-id');
       state.gov.checklist = state.gov.checklist.map(t => t.id === id ? { ...t, status: e.target.checked ? 'Completed' : 'Pending' } : t);
       renderGovChecklist();
+      renderGovWorkflow(); // keep workflow nodes in sync
     });
   });
 }
