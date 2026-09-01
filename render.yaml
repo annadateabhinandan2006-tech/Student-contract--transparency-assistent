@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: user-contract-transparency-assistant
+    runtime: node
+    plan: free
+    region: oregon
+    branch: release/hackathon-final
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
