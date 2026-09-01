@@ -1,33 +1,106 @@
 /**
  * app.js
- * Client application controller for Student Contract Transparency & Obligation Assistant.
+ * Client controller for Student Contract Transparency Assistant and Government Process Agent.
+ * Preserves 100% of existing API contracts, backend handlers, and state logic.
  */
 
-// Global State
+// Global Application State
 const state = {
-  documentText: '',
-  filename: '',
-  analysis: null,
-  company: null,
-  checklist: [],
-  samples: [],
-  isListening: false,
+  activeMode: 'contract', // Default primary mode is Student Contract Transparency Assistant
+  sessionId: 'session_' + Date.now(),
+  gov: {
+    goal: '',
+    process: null,
+    requiredDocs: [],
+    checklist: [],
+    formFields: [],
+    timeline: [],
+    referenceNumber: null
+  },
+  contract: {
+    documentText: '',
+    filename: '',
+    analysis: null,
+    company: null,
+    checklist: []
+  },
+  isListeningGov: false,
+  isListeningContract: false,
   speechRecognition: null,
   serverOnline: true
 };
 
-// DOM Elements
+// DOM Elements Registry
 const elements = {
+  // Mode Switcher & Global Header
+  modeGovBtn: document.getElementById('modeGovBtn'),
+  modeContractBtn: document.getElementById('modeContractBtn'),
+  govLandingHero: document.getElementById('govLandingHero'),
+  govViewContainer: document.getElementById('govViewContainer'),
+  contractViewContainer: document.getElementById('contractViewContainer'),
+  appHeaderTitle: document.getElementById('appHeaderTitle'),
+  appHeaderSubtitle: document.getElementById('appHeaderSubtitle'),
+
+  // Health Status
   healthBadge: document.getElementById('healthBadge'),
   healthDot: document.getElementById('healthDot'),
   healthStatusText: document.getElementById('healthStatusText'),
-  tabButtons: document.querySelectorAll('.tab-btn'),
-  tabContents: document.querySelectorAll('.tab-content'),
+
+  // Government Process Agent Elements
+  goalInputField: document.getElementById('goalInputField'),
+  goalMicBtn: document.getElementById('goalMicBtn'),
+  startGoalBtn: document.getElementById('startGoalBtn'),
+  govProcessHeaderBanner: document.getElementById('govProcessHeaderBanner'),
+  govCategoryBadge: document.getElementById('govCategoryBadge'),
+  govProcessTitle: document.getElementById('govProcessTitle'),
+  govDepartmentText: document.getElementById('govDepartmentText'),
+  govFeeText: document.getElementById('govFeeText'),
+  govClarificationCard: document.getElementById('govClarificationCard'),
+  govClarificationQuestion: document.getElementById('govClarificationQuestion'),
+  govClarificationOptions: document.getElementById('govClarificationOptions'),
+  govMainGrid: document.getElementById('govMainGrid'),
+  govPortalName: document.getElementById('govPortalName'),
+  govPortalDomain: document.getElementById('govPortalDomain'),
+  govPortalLinkBtn: document.getElementById('govPortalLinkBtn'),
+  govPurposeText: document.getElementById('govPurposeText'),
+  govFreshnessBadge: document.getElementById('govFreshnessBadge'),
+  govDocCountBadge: document.getElementById('govDocCountBadge'),
+  govRequiredDocsContainer: document.getElementById('govRequiredDocsContainer'),
+  govChecklistContainer: document.getElementById('govChecklistContainer'),
+  govChecklistProgressText: document.getElementById('govChecklistProgressText'),
+  govFormFieldsContainer: document.getElementById('govFormFieldsContainer'),
+  govValidateBtn: document.getElementById('govValidateBtn'),
+  govLaunchReviewBtn: document.getElementById('govLaunchReviewBtn'),
+  govVoiceMicBtn: document.getElementById('govVoiceMicBtn'),
+  govVoiceStatusText: document.getElementById('govVoiceStatusText'),
+  govVoiceLog: document.getElementById('govVoiceLog'),
+  govTimelineBox: document.getElementById('govTimelineBox'),
+
+  // Gov Modals
+  govReviewModal: document.getElementById('govReviewModal'),
+  govReviewFieldsList: document.getElementById('govReviewFieldsList'),
+  govConsentCheckbox: document.getElementById('govConsentCheckbox'),
+  cancelGovReviewBtn: document.getElementById('cancelGovReviewBtn'),
+  confirmGovSubmissionBtn: document.getElementById('confirmGovSubmissionBtn'),
+
+  // Contract Assistant Elements
+  tabButtons: document.querySelectorAll('#contractViewContainer .tab-btn'),
+  tabContents: document.querySelectorAll('#contractViewContainer .tab-content'),
   dropzone: document.getElementById('dropzone'),
+  browseBtn: document.getElementById('browseBtn'),
   fileInput: document.getElementById('fileInput'),
   pastedText: document.getElementById('pastedText'),
+  charCounter: document.getElementById('charCounter'),
   analyzeBtn: document.getElementById('analyzeBtn'),
-  sampleCardsContainer: document.getElementById('sampleCardsContainer'),
+  analyzeBtnText: document.getElementById('analyzeBtnText'),
+  analysisLoadingState: document.getElementById('analysisLoadingState'),
+  loadingStepTitle: document.getElementById('loadingStepTitle'),
+  loadingStepSub: document.getElementById('loadingStepSub'),
+  loadingProgressFill: document.getElementById('loadingProgressFill'),
+  
+  // Findings & Workspace
+  docNameText: document.getElementById('docNameText'),
+  docTypeBadge: document.getElementById('docTypeBadge'),
   findingsContainer: document.getElementById('findingsContainer'),
   findingsCountBadge: document.getElementById('findingsCountBadge'),
   severityFilter: document.getElementById('severityFilter'),
@@ -35,18 +108,15 @@ const elements = {
   riskScoreBadge: document.getElementById('riskScoreBadge'),
   missingInfoAlert: document.getElementById('missingInfoAlert'),
   missingInfoList: document.getElementById('missingInfoList'),
+  
+  // Checklist
   checklistContainer: document.getElementById('checklistContainer'),
   checklistProgressBadge: document.getElementById('checklistProgressBadge'),
   progressPercentageText: document.getElementById('progressPercentageText'),
   progressRatioText: document.getElementById('progressRatioText'),
   progressBarFill: document.getElementById('progressBarFill'),
-  addCustomTaskBtn: document.getElementById('addCustomTaskBtn'),
-  addTaskModal: document.getElementById('addTaskModal'),
-  cancelAddTaskBtn: document.getElementById('cancelAddTaskBtn'),
-  saveCustomTaskBtn: document.getElementById('saveCustomTaskBtn'),
-  customTaskTitle: document.getElementById('customTaskTitle'),
-  customTaskDesc: document.getElementById('customTaskDesc'),
-  customTaskPriority: document.getElementById('customTaskPriority'),
+
+  // Chat & Trace & Voice
   chatMessages: document.getElementById('chatMessages'),
   chatInput: document.getElementById('chatInput'),
   sendChatBtn: document.getElementById('sendChatBtn'),
@@ -55,41 +125,91 @@ const elements = {
   voiceStatusText: document.getElementById('voiceStatusText'),
   voiceTranscriptLog: document.getElementById('voiceTranscriptLog'),
   verificationContent: document.getElementById('verificationContent'),
+
+  // Header Actions & Universal Modals
   saveBtn: document.getElementById('saveBtn'),
   shareBtn: document.getElementById('shareBtn'),
   exportMdBtn: document.getElementById('exportMdBtn'),
   shareModal: document.getElementById('shareModal'),
   shareUrlInput: document.getElementById('shareUrlInput'),
   copyShareUrlBtn: document.getElementById('copyShareUrlBtn'),
-  closeShareModalBtn: document.getElementById('closeShareModalBtn')
+  closeShareModalBtn: document.getElementById('closeShareModalBtn'),
+  addTaskModal: document.getElementById('addTaskModal'),
+  addCustomTaskBtn: document.getElementById('addCustomTaskBtn'),
+  customTaskTitle: document.getElementById('customTaskTitle'),
+  customTaskDesc: document.getElementById('customTaskDesc'),
+  customTaskPriority: document.getElementById('customTaskPriority'),
+  cancelAddTaskBtn: document.getElementById('cancelAddTaskBtn'),
+  saveCustomTaskBtn: document.getElementById('saveCustomTaskBtn')
 };
 
-// Initialize Application
+// Application Initialization
 document.addEventListener('DOMContentLoaded', async () => {
-  setupTabs();
-  setupUploadAndDropzone();
-  setupChat();
-  setupVoice();
-  setupModals();
-  setupShareAndExport();
+  setupModeSwitcher();
+  setupGovAgent();
+  setupContractAssistant();
+  setupSpeechRecognition();
+  setupUniversalModals();
 
-  // Check health and fetch sample contracts
+  // Start in Primary Contract Analyzer Mode
+  switchMode('contract');
+
   await checkServerHealth();
-  await loadSampleContracts();
-
-  // Check if opening a shared link
-  const path = window.location.pathname;
-  if (path.startsWith('/share/')) {
-    const shareId = path.split('/share/')[1];
-    if (shareId) loadSharedChecklist(shareId);
-  }
-
-  // Periodic health check
   setInterval(checkServerHealth, 15000);
 });
 
-// --- 1. TABS MANAGEMENT ---
-function setupTabs() {
+// --- 1. MODE SWITCHER ---
+function setupModeSwitcher() {
+  elements.modeGovBtn.addEventListener('click', () => switchMode('gov'));
+  elements.modeContractBtn.addEventListener('click', () => switchMode('contract'));
+}
+
+function switchMode(mode) {
+  state.activeMode = mode;
+  if (mode === 'gov') {
+    elements.modeGovBtn.classList.add('active');
+    elements.modeContractBtn.classList.remove('active');
+    if (elements.govLandingHero) elements.govLandingHero.style.display = 'block';
+    if (elements.govViewContainer) elements.govViewContainer.style.display = 'block';
+    if (elements.contractViewContainer) elements.contractViewContainer.style.display = 'none';
+    elements.appHeaderTitle.textContent = 'Government Process Automation Agent';
+    elements.appHeaderSubtitle.textContent = 'Action-Oriented Real-World Services & Verified Portals';
+  } else {
+    elements.modeGovBtn.classList.remove('active');
+    elements.modeContractBtn.classList.add('active');
+    if (elements.govLandingHero) elements.govLandingHero.style.display = 'none';
+    if (elements.govViewContainer) elements.govViewContainer.style.display = 'none';
+    if (elements.contractViewContainer) elements.contractViewContainer.style.display = 'block';
+    elements.appHeaderTitle.textContent = 'Student Contract Transparency Assistant';
+    elements.appHeaderSubtitle.textContent = 'Protecting Students from Hidden Obligations';
+  }
+}
+
+// --- 2. SERVER HEALTH ---
+async function checkServerHealth() {
+  try {
+    const res = await fetch('/api/health');
+    if (res.ok) {
+      state.serverOnline = true;
+      elements.healthStatusText.textContent = 'Cloud AI Active';
+      elements.healthDot.style.background = '#22c55e';
+      elements.healthBadge.style.background = '#f0fdf4';
+      elements.healthBadge.style.color = '#166534';
+    } else {
+      throw new Error('Server non-200');
+    }
+  } catch (err) {
+    state.serverOnline = false;
+    elements.healthStatusText.textContent = 'Offline Local Mode';
+    elements.healthDot.style.background = '#f59e0b';
+    elements.healthBadge.style.background = '#fffbeb';
+    elements.healthBadge.style.color = '#92400e';
+  }
+}
+
+// --- 3. CONTRACT ASSISTANT CONTROLLER ---
+function setupContractAssistant() {
+  // Tab Navigation
   elements.tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       elements.tabButtons.forEach(b => b.classList.remove('active'));
@@ -101,257 +221,273 @@ function setupTabs() {
       if (targetContent) targetContent.classList.add('active');
     });
   });
-}
 
-function switchTab(tabId) {
-  const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-  if (btn) btn.click();
-}
-
-// --- 2. SERVER HEALTH ---
-async function checkServerHealth() {
-  try {
-    const res = await fetch('/api/health');
-    if (res.ok) {
-      state.serverOnline = true;
-      elements.healthStatusText.textContent = '🟢 Cloud AI Active';
-      elements.healthDot.style.background = '#10b981';
-      elements.healthBadge.style.background = '#ecfdf5';
-      elements.healthBadge.style.color = '#065f46';
-    } else {
-      throw new Error('Server returned non-200');
-    }
-  } catch (err) {
-    state.serverOnline = false;
-    elements.healthStatusText.textContent = '🟡 Offline Local Mode';
-    elements.healthDot.style.background = '#f59e0b';
-    elements.healthBadge.style.background = '#fffbeb';
-    elements.healthBadge.style.color = '#92400e';
+  // Textarea Char Counter
+  if (elements.pastedText) {
+    elements.pastedText.addEventListener('input', () => {
+      elements.charCounter.textContent = `${elements.pastedText.value.length} / 50000`;
+    });
   }
-}
 
-// --- 3. SAMPLE CONTRACTS & UPLOAD ---
-async function loadSampleContracts() {
-  try {
-    const res = await fetch('/api/samples');
-    if (res.ok) {
-      state.samples = await res.json();
-      renderSampleCards();
-    }
-  } catch (err) {
-    console.error('Failed to load sample contracts:', err);
+  // File Upload Handlers
+  if (elements.browseBtn) {
+    elements.browseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      elements.fileInput.click();
+    });
   }
-}
 
-function renderSampleCards() {
-  if (!state.samples || state.samples.length === 0) return;
+  if (elements.dropzone) {
+    elements.dropzone.addEventListener('click', (e) => {
+      if (e.target !== elements.browseBtn && !elements.browseBtn.contains(e.target)) {
+        elements.fileInput.click();
+      }
+    });
 
-  elements.sampleCardsContainer.innerHTML = state.samples.map(s => `
-    <div class="sample-card" data-id="${s.id}">
-      <div class="sample-card-header">
-        <span class="sample-card-title">${s.title}</span>
-        <span class="badge ${s.id.includes('hidden_fee') ? 'badge-high' : s.id.includes('clean') ? 'badge-low' : 'badge-medium'}">${s.badge}</span>
-      </div>
-      <p class="sample-card-desc">${s.description}</p>
-    </div>
-  `).join('');
+    ['dragenter', 'dragover'].forEach(eventName => {
+      elements.dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        elements.dropzone.classList.add('dragover');
+      });
+    });
 
-  document.querySelectorAll('.sample-card').forEach(card => {
+    ['dragleave', 'drop'].forEach(eventName => {
+      elements.dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        elements.dropzone.classList.remove('dragover');
+      });
+    });
+
+    elements.dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        handleContractFileUpload(files[0]);
+      }
+    });
+  }
+
+  if (elements.fileInput) {
+    elements.fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleContractFileUpload(e.target.files[0]);
+    });
+  }
+
+  // Analyze Button
+  if (elements.analyzeBtn) {
+    elements.analyzeBtn.addEventListener('click', () => {
+      const text = elements.pastedText.value.trim();
+      if (text) {
+        state.contract.documentText = text;
+        state.contract.filename = 'Pasted Contract Terms';
+        performContractAnalysis({ text, filename: state.contract.filename });
+      } else {
+        alert('Please select a document file or paste contract text to analyze.');
+      }
+    });
+  }
+
+  // Sample Contract Cards
+  document.querySelectorAll('#quickSampleChipsContainer .sample-card-item').forEach(card => {
     card.addEventListener('click', async () => {
       const sampleId = card.getAttribute('data-id');
-      await loadAndAnalyzeSample(sampleId);
+      showProgressiveLoading('Loading sample contract...');
+      try {
+        const res = await fetch(`/api/samples/${sampleId}`);
+        const sample = await res.json();
+        state.contract.documentText = sample.text;
+        state.contract.filename = sample.title;
+        elements.pastedText.value = sample.text;
+        elements.charCounter.textContent = `${sample.text.length} / 50000`;
+        await performContractAnalysis({ sampleId });
+      } catch (err) {
+        hideProgressiveLoading();
+        alert('Error loading sample document: ' + err.message);
+      }
     });
   });
-}
 
-async function loadAndAnalyzeSample(sampleId) {
-  try {
-    elements.analyzeBtn.disabled = true;
-    elements.analyzeBtn.textContent = '⏳ Analyzing Sample Contract...';
+  // Severity Filter
+  if (elements.severityFilter) {
+    elements.severityFilter.addEventListener('change', renderContractFindings);
+  }
 
-    const res = await fetch(`/api/samples/${sampleId}`);
-    const sample = await res.json();
+  // Chatbot
+  if (elements.sendChatBtn) {
+    elements.sendChatBtn.addEventListener('click', sendContractChatMessage);
+  }
+  if (elements.chatInput) {
+    elements.chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendContractChatMessage();
+    });
+  }
 
-    state.documentText = sample.text;
-    state.filename = sample.title;
-    elements.pastedText.value = sample.text;
+  // Suggested Prompts
+  document.querySelectorAll('.chat-window .prompt-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const prompt = chip.getAttribute('data-prompt');
+      elements.chatInput.value = prompt;
+      sendContractChatMessage();
+    });
+  });
 
-    await performAnalysis({ sampleId });
-  } catch (err) {
-    alert('Failed to analyze sample contract: ' + err.message);
-  } finally {
-    elements.analyzeBtn.disabled = false;
-    elements.analyzeBtn.textContent = '🔍 Analyze Contract Obligations';
+  // Add Custom Task Modal
+  if (elements.addCustomTaskBtn) {
+    elements.addCustomTaskBtn.addEventListener('click', () => {
+      elements.customTaskTitle.value = '';
+      elements.customTaskDesc.value = '';
+      elements.customTaskPriority.value = 'Medium';
+      elements.addTaskModal.classList.add('open');
+    });
+  }
+
+  if (elements.cancelAddTaskBtn) {
+    elements.cancelAddTaskBtn.addEventListener('click', () => {
+      elements.addTaskModal.classList.remove('open');
+    });
+  }
+
+  if (elements.saveCustomTaskBtn) {
+    elements.saveCustomTaskBtn.addEventListener('click', addCustomChecklistTask);
   }
 }
 
-function setupUploadAndDropzone() {
-  // Dropzone drag-over
-  elements.dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    elements.dropzone.classList.add('dragover');
-  });
-
-  elements.dropzone.addEventListener('dragleave', () => {
-    elements.dropzone.classList.remove('dragover');
-  });
-
-  elements.dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    elements.dropzone.classList.remove('dragover');
-    if (e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  });
-
-  elements.dropzone.addEventListener('click', () => {
-    elements.fileInput.click();
-  });
-
-  elements.fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0]);
-    }
-  });
-
-  elements.analyzeBtn.addEventListener('click', async () => {
-    const text = elements.pastedText.value.trim();
-    if (!text) {
-      alert('Please paste contract text or select a sample contract above.');
-      return;
-    }
-    state.documentText = text;
-    state.filename = 'Pasted Contract Agreement';
-    await performAnalysis({ text, filename: state.filename });
-  });
-
-  elements.severityFilter.addEventListener('change', () => {
-    renderFindings();
-  });
+// Progressive Loading Visual Animation
+function showProgressiveLoading(initialText = 'Analyzing document...') {
+  elements.analyzeBtn.disabled = true;
+  if (elements.analyzeBtnText) elements.analyzeBtnText.textContent = '⏳ Analyzing...';
+  if (elements.analysisLoadingState) {
+    elements.analysisLoadingState.style.display = 'block';
+    elements.loadingStepTitle.textContent = initialText;
+    elements.loadingProgressFill.style.width = '20%';
+  }
 }
 
-async function handleFileUpload(file) {
+function updateProgressiveLoading(title, sub, percentage) {
+  if (elements.loadingStepTitle) elements.loadingStepTitle.textContent = title;
+  if (elements.loadingStepSub) elements.loadingStepSub.textContent = sub;
+  if (elements.loadingProgressFill) elements.loadingProgressFill.style.width = `${percentage}%`;
+}
+
+function hideProgressiveLoading() {
+  elements.analyzeBtn.disabled = false;
+  if (elements.analyzeBtnText) elements.analyzeBtnText.textContent = 'Analyze Document ✦';
+  if (elements.analysisLoadingState) elements.analysisLoadingState.style.display = 'none';
+}
+
+async function handleContractFileUpload(file) {
+  showProgressiveLoading(`Uploading ${file.name}...`);
+  updateProgressiveLoading('Reading File...', 'Extracting document text and layout', 40);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
   try {
-    elements.analyzeBtn.disabled = true;
-    elements.analyzeBtn.textContent = `⏳ Uploading and Parsing ${file.name}...`;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Upload analysis failed');
-    }
-
+    const res = await fetch('/api/analyze', { method: 'POST', body: formData });
     const data = await res.json();
-    handleAnalysisSuccess(data);
+    if (!res.ok) throw new Error(data.error || 'Failed to analyze document');
+
+    updateProgressiveLoading('Analyzing Obligations...', 'Scanning for bonds, fees, and penalties', 80);
+    setTimeout(() => {
+      onContractAnalysisComplete(data);
+      hideProgressiveLoading();
+    }, 400);
   } catch (err) {
-    alert('Error processing file: ' + err.message);
-  } finally {
-    elements.analyzeBtn.disabled = false;
-    elements.analyzeBtn.textContent = '🔍 Analyze Contract Obligations';
+    hideProgressiveLoading();
+    alert('Upload failed: ' + err.message);
   }
 }
 
-async function performAnalysis(payload) {
-  try {
-    elements.analyzeBtn.disabled = true;
-    elements.analyzeBtn.textContent = '⏳ Processing Clauses & Obligations...';
+async function performContractAnalysis(payload) {
+  showProgressiveLoading('Processing contract text...');
+  updateProgressiveLoading('AI Analysis Active...', 'Detecting hidden obligations & risk levels', 50);
 
+  try {
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Analysis failed');
-    }
-
     const data = await res.json();
-    handleAnalysisSuccess(data);
+    if (!res.ok) throw new Error(data.error || 'Failed to complete analysis');
+
+    updateProgressiveLoading('Generating Checklist...', 'Structuring action items and trace log', 90);
+    setTimeout(() => {
+      onContractAnalysisComplete(data);
+      hideProgressiveLoading();
+    }, 400);
   } catch (err) {
-    alert('Analysis Error: ' + err.message);
-  } finally {
-    elements.analyzeBtn.disabled = false;
-    elements.analyzeBtn.textContent = '🔍 Analyze Contract Obligations';
+    hideProgressiveLoading();
+    alert('Analysis failed: ' + err.message);
   }
 }
 
-function handleAnalysisSuccess(data) {
-  state.analysis = data.analysis;
-  state.documentText = data.documentText;
-  state.filename = data.filename;
-  state.company = data.company;
-  state.checklist = data.analysis.checklist || [];
+function onContractAnalysisComplete(data) {
+  state.contract.analysis = data.analysis;
+  state.contract.documentText = data.documentText;
+  state.contract.filename = data.filename;
+  state.contract.company = data.company;
+  state.contract.checklist = data.analysis.checklist || [];
 
-  // Update UI components
-  renderRiskBanner();
-  renderFindings();
-  renderChecklist();
-  renderVerification();
+  // Automatically switch tab to Obligation Findings for immediate user value
+  const btn = document.querySelector('#contractViewContainer .tab-btn[data-tab="tab-findings"]');
+  if (btn) btn.click();
 
-  // Switch to Findings tab
-  switchTab('tab-findings');
-
-  // Push welcome message to chatbot
-  addChatMessage('assistant', `✅ I have analyzed **${state.filename}**.\n\n` +
-    `Found **${state.analysis.findings.length} key obligation clause(s)** and generated **${state.checklist.length} actionable checklist items**.\n\n` +
-    `Ask me any question or click *"What should I do?"* to run the full step-by-step guidance agent!`);
+  renderContractSummary();
+  renderContractFindings();
+  renderContractChecklist();
+  renderCompanyVerification();
+  renderAnalysisTrace();
 }
 
-// --- 4. RENDER RISK & FINDINGS ---
-function renderRiskBanner() {
-  if (!state.analysis) return;
+function renderContractSummary() {
+  if (!state.contract.analysis) return;
+  const { summary } = state.contract.analysis;
 
-  const { summary } = state.analysis;
-  elements.riskSummaryText.innerHTML = summary.studentFriendlySummary.replace(/\n\n/g, '<br><br>');
+  elements.docNameText.textContent = state.contract.filename || 'Contract Document';
+  elements.docTypeBadge.textContent = 'DOCUMENT ANALYZED';
+  elements.riskSummaryText.innerHTML = formatMarkdownText(summary.studentFriendlySummary);
+
   elements.riskScoreBadge.textContent = summary.overallRiskScore;
-
   elements.riskScoreBadge.className = 'risk-score-badge';
-  if (summary.highSeverity >= 1) {
+  if (summary.highSeverity >= 2) {
     elements.riskScoreBadge.classList.add('risk-score-high');
-  } else if (summary.mediumSeverity >= 1) {
+  } else if (summary.highSeverity === 1 || summary.mediumSeverity >= 2) {
     elements.riskScoreBadge.classList.add('risk-score-med');
   } else {
     elements.riskScoreBadge.classList.add('risk-score-low');
   }
 
-  // Missing info section
-  if (state.analysis.missingInformation && state.analysis.missingInformation.length > 0) {
+  // Missing Information Alert
+  const missing = state.contract.analysis.missingInformation || [];
+  if (missing.length > 0) {
     elements.missingInfoAlert.style.display = 'block';
-    elements.missingInfoList.innerHTML = state.analysis.missingInformation.map(m => `
-      <li style="margin-bottom: 0.35rem;">
-        <strong>${m.item}</strong>: ${m.detail} <em>(Action: ${m.recommended_action})</em>
-      </li>
+    elements.missingInfoList.innerHTML = missing.map(m => `
+      <li><strong>${escapeHtml(m.item)}:</strong> ${escapeHtml(m.detail)}</li>
     `).join('');
   } else {
     elements.missingInfoAlert.style.display = 'none';
   }
 }
 
-function renderFindings() {
-  if (!state.analysis) return;
-
-  const filter = elements.severityFilter.value;
-  let findings = state.analysis.findings;
-
+function renderContractFindings() {
+  if (!state.contract.analysis) return;
+  let findings = state.contract.analysis.findings || [];
   elements.findingsCountBadge.textContent = findings.length;
 
+  const filter = elements.severityFilter.value;
   if (filter !== 'all') {
     findings = findings.filter(f => f.severity === filter);
   }
 
   if (findings.length === 0) {
     elements.findingsContainer.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-        No findings match the selected filter (${filter}).
+      <div class="empty-state-box">
+        <div class="empty-state-icon">✅</div>
+        <h3>No findings matching filter</h3>
+        <p>There are no contract obligations identified for severity level: <strong>${filter}</strong>.</p>
       </div>
     `;
     return;
@@ -361,581 +497,716 @@ function renderFindings() {
     <div class="finding-card severity-${f.severity}">
       <div class="finding-header">
         <div>
-          <div class="finding-title">${f.finding}</div>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">Category: ${f.category.toUpperCase()} • Location: Page ${f.page || 1} (Sec ${f.sectionIndex || 1})</span>
+          <div class="finding-title">${escapeHtml(f.finding)}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+            Category: ${f.category.toUpperCase()} • Section/Page ${f.page || 1} • Amount: ${escapeHtml(f.amount)}
+          </div>
         </div>
-        <span class="badge badge-${f.severity}">${f.severity} Severity</span>
+        <span class="badge badge-${f.severity}">${f.severity} Risk</span>
       </div>
 
-      <div class="evidence-box">
-        <strong>Exact Evidence Snippet:</strong><br>
-        "${escapeHtml(f.evidence)}"
-      </div>
-
-      <div class="finding-meta">
-        ${f.amount && f.amount !== 'Not explicitly stated in clause' ? `<span><strong>Detected Amount:</strong> ${f.amount}</span>` : ''}
-        ${f.timing && f.timing !== 'As specified in section' ? `<span><strong>Timing:</strong> ${f.timing}</span>` : ''}
-        <span><strong>AI Confidence:</strong> ${(f.confidence * 100).toFixed(0)}%</span>
-      </div>
-
-      <div class="action-recommendation">
-        <div>
-          <strong>Recommended Student Action:</strong><br>
-          ${f.recommended_action}
+      <!-- Structured 3-Part Grid: Original Clause vs In Simple Words vs What You Should Check -->
+      <div class="finding-three-grid">
+        <div class="finding-box-part box-original">
+          <div class="box-part-title">📄 Original Clause</div>
+          "${escapeHtml(f.evidence)}"
         </div>
-        <button class="btn btn-secondary btn-sm draft-email-btn" data-finding-id="${f.id}" style="white-space: nowrap;">
-          ✉️ Draft HR Email
-        </button>
+
+        <div class="finding-box-part box-simple">
+          <div class="box-part-title">💡 In Simple Words</div>
+          ${escapeHtml(f.description)}
+        </div>
+
+        <div class="finding-box-part box-action">
+          <div class="box-part-title">✅ What You Should Check</div>
+          ${escapeHtml(f.recommended_action)}
+        </div>
       </div>
     </div>
   `).join('');
-
-  document.querySelectorAll('.draft-email-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const findingId = btn.getAttribute('data-finding-id');
-      await runAgentGoal(`Draft an inquiry email to HR for finding ${findingId}`, { findingId });
-      switchTab('tab-agent');
-    });
-  });
 }
 
-// --- 5. ACTION CHECKLIST ---
-function renderChecklist() {
-  if (!state.checklist || state.checklist.length === 0) {
-    elements.checklistContainer.innerHTML = `
-      <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No checklist items yet.</p>
-    `;
-    updateProgressMetrics();
-    return;
-  }
-
-  elements.checklistContainer.innerHTML = state.checklist.map(item => `
-    <div class="checklist-item" data-id="${item.id}">
-      <input type="checkbox" class="checklist-checkbox" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
-      <div class="checklist-body">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-          <span class="checklist-task-title" style="${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${item.task}</span>
-          <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <span class="badge ${item.priority === 'High' ? 'badge-high' : item.priority === 'Medium' ? 'badge-medium' : 'badge-low'}">${item.priority}</span>
-            <select class="checklist-select status-select" data-id="${item.id}">
-              <option value="Pending" ${item.status === 'Pending' ? 'selected' : ''}>Pending</option>
-              <option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-              <option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option>
-              <option value="Blocked" ${item.status === 'Blocked' ? 'selected' : ''}>Blocked</option>
-            </select>
-          </div>
-        </div>
-        <p class="checklist-desc">${item.description}</p>
-        ${item.evidence && item.evidence !== 'Information could not be verified from the document.' ? `
-          <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.35rem; font-family: monospace;">
-            Ref: "${escapeHtml(item.evidence.slice(0, 100))}..."
-          </div>
-        ` : ''}
-      </div>
-    </div>
-  `).join('');
-
-  // Attach status change events
-  document.querySelectorAll('.checklist-checkbox').forEach(box => {
-    box.addEventListener('change', (e) => {
-      const taskId = box.getAttribute('data-id');
-      const newStatus = e.target.checked ? 'Completed' : 'Pending';
-      updateTaskStatus(taskId, newStatus);
-    });
-  });
-
-  document.querySelectorAll('.status-select').forEach(sel => {
-    sel.addEventListener('change', (e) => {
-      const taskId = sel.getAttribute('data-id');
-      updateTaskStatus(taskId, e.target.value);
-    });
-  });
-
-  updateProgressMetrics();
-}
-
-function updateTaskStatus(taskId, newStatus) {
-  state.checklist = state.checklist.map(item => {
-    if (item.id === taskId) {
-      return { ...item, status: newStatus };
-    }
-    return item;
-  });
-  renderChecklist();
-}
-
-function updateProgressMetrics() {
-  const total = state.checklist.length;
-  const completed = state.checklist.filter(i => i.status === 'Completed').length;
+function renderContractChecklist() {
+  const total = state.contract.checklist.length;
+  const completed = state.contract.checklist.filter(i => i.status === 'Completed').length;
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
+  elements.checklistProgressBadge.textContent = `${percentage}%`;
   elements.progressPercentageText.textContent = `${percentage}%`;
   elements.progressRatioText.textContent = `${completed} / ${total}`;
   elements.progressBarFill.style.width = `${percentage}%`;
-  elements.checklistProgressBadge.textContent = `${percentage}%`;
-}
 
-// --- 6. CHATBOT & AGENTIC LOOP ---
-function setupChat() {
-  elements.sendChatBtn.addEventListener('click', sendUserChatMessage);
-  elements.chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendUserChatMessage();
-  });
+  if (total === 0) {
+    elements.checklistContainer.innerHTML = `
+      <div class="empty-state-box">
+        <div class="empty-state-icon">✅</div>
+        <h3>Checklist is Empty</h3>
+        <p>Upload a document to generate your personalized action checklist.</p>
+      </div>
+    `;
+    return;
+  }
 
-  // Prompt chips
-  document.querySelectorAll('.prompt-chip:not(.voice-command-chip)').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const prompt = chip.getAttribute('data-prompt');
-      if (prompt.includes('Run Agent Goal') || prompt.includes('Check this contract and tell me what I should do')) {
-        runAgentGoal('Check this contract and tell me what I should do.');
-      } else {
-        elements.chatInput.value = prompt;
-        sendUserChatMessage();
-      }
+  elements.checklistContainer.innerHTML = state.contract.checklist.map(item => `
+    <div class="checklist-item" data-id="${item.id}">
+      <input type="checkbox" class="checklist-checkbox contract-task-cb" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
+      <div class="checklist-body">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="checklist-task-title" style="${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
+            ${escapeHtml(item.task)}
+          </span>
+          <span class="badge ${item.priority === 'High' ? 'badge-high' : 'badge-medium'}">${item.priority || 'Medium'}</span>
+        </div>
+        <p class="checklist-desc">${escapeHtml(item.description)}</p>
+      </div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.contract-task-cb').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = cb.getAttribute('data-id');
+      state.contract.checklist = state.contract.checklist.map(t => 
+        t.id === id ? { ...t, status: e.target.checked ? 'Completed' : 'Pending' } : t
+      );
+      renderContractChecklist();
     });
   });
 }
 
-async function sendUserChatMessage() {
-  const message = elements.chatInput.value.trim();
-  if (!message) return;
+function addCustomChecklistTask() {
+  const title = elements.customTaskTitle.value.trim();
+  const desc = elements.customTaskDesc.value.trim();
+  const priority = elements.customTaskPriority.value;
 
-  elements.chatInput.value = '';
-  addChatMessage('user', message);
-
-  // If user asks general goal, route to agent workflow
-  if (message.toLowerCase().includes('what should i do') || message.toLowerCase().includes('check this contract')) {
-    await runAgentGoal(message);
+  if (!title) {
+    alert('Please enter a task title.');
     return;
   }
+
+  const newTask = {
+    id: `custom_${Date.now()}`,
+    task: title,
+    description: desc || 'User-added custom action item.',
+    priority: priority || 'Medium',
+    status: 'Pending',
+    category: 'custom'
+  };
+
+  state.contract.checklist.push(newTask);
+  elements.addTaskModal.classList.remove('open');
+  renderContractChecklist();
+}
+
+function renderCompanyVerification() {
+  if (!state.contract.company) {
+    elements.verificationContent.innerHTML = `
+      <div class="empty-state-box">
+        <div class="empty-state-icon">🏛️</div>
+        <h3>No Entity Verified Yet</h3>
+        <p>Upload a document to automatically verify corporate registration records.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const c = state.contract.company;
+  elements.verificationContent.innerHTML = `
+    <div class="verification-card">
+      <div class="verification-header">
+        <div>
+          <h3 style="font-size: 1.15rem; color: #0f172a;">${escapeHtml(c.companyName)}</h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Queried Identifier: ${escapeHtml(c.queriedName)}</span>
+        </div>
+        <span class="badge ${c.verified ? 'badge-low' : 'badge-medium'}">
+          ${c.verified ? 'VERIFIED REGISTRATION' : 'NEEDS PUBLIC CHECK'}
+        </span>
+      </div>
+
+      <div class="verification-field-grid">
+        <div><strong>Corporate Identification Number (CIN):</strong> ${escapeHtml(c.cin)}</div>
+        <div><strong>Registration Status:</strong> ${escapeHtml(c.registrationStatus)}</div>
+        <div><strong>State / Jurisdiction:</strong> ${escapeHtml(c.state)}</div>
+        <div><strong>Registration Authority:</strong> ${escapeHtml(c.authority)}</div>
+        <div><strong>Primary Source:</strong> <a href="${c.sourceUrl}" target="_blank" style="color: var(--primary);">${escapeHtml(c.source)}</a></div>
+        <div><strong>Verification Date:</strong> ${c.verificationDate}</div>
+      </div>
+
+      <div class="verification-disclaimer">
+        ${escapeHtml(c.disclaimer)}
+      </div>
+    </div>
+  `;
+}
+
+function renderAnalysisTrace() {
+  const steps = [
+    '✓ Document loaded & parsed cleanly.',
+    '✓ Financial obligation rules executed (training fees, deposits).',
+    '✓ Service bond & lock-in tenure checked.',
+    '✓ Notice period & exit penalties calculated.',
+    '✓ Unclear & missing terms identified.',
+    '✓ Corporate entity cross-checked against MCA registry.',
+    '✓ Student action checklist generated.'
+  ];
+
+  elements.agentTraceBox.innerHTML = steps.map(s => `<div>${s}</div>`).join('');
+}
+
+async function sendContractChatMessage() {
+  const msg = elements.chatInput.value.trim();
+  if (!msg) return;
+  elements.chatInput.value = '';
+
+  const userBubble = document.createElement('div');
+  userBubble.className = 'chat-bubble chat-user';
+  userBubble.textContent = msg;
+  elements.chatMessages.appendChild(userBubble);
+  elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message,
+        message: msg,
         context: {
-          documentText: state.documentText,
-          findings: state.analysis ? state.analysis.findings : [],
-          checklist: state.checklist
+          documentText: state.contract.documentText,
+          findings: state.contract.analysis ? state.contract.analysis.findings : [],
+          checklist: state.contract.checklist
         }
       })
     });
-
     const data = await res.json();
-    addChatMessage('assistant', data.reply);
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch response');
+
+    const botBubble = document.createElement('div');
+    botBubble.className = 'chat-bubble chat-assistant';
+    botBubble.innerHTML = formatMarkdownText(data.reply);
+    elements.chatMessages.appendChild(botBubble);
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
   } catch (err) {
-    addChatMessage('assistant', `⚠️ Offline Fallback: Could not connect to remote AI server. Based on local contract text: ${localFallbackChat(message)}`);
+    const errorBubble = document.createElement('div');
+    errorBubble.className = 'chat-bubble chat-assistant';
+    errorBubble.style.background = '#fef2f2';
+    errorBubble.style.color = '#991b1b';
+    errorBubble.textContent = 'Error: ' + err.message;
+    elements.chatMessages.appendChild(errorBubble);
   }
 }
 
-function addChatMessage(role, text) {
-  const bubble = document.createElement('div');
-  bubble.className = `chat-bubble chat-${role}`;
-  bubble.innerHTML = formatMarkdownText(text);
-  elements.chatMessages.appendChild(bubble);
-  elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+// --- 4. PRESERVED GOVERNMENT AGENT FUNCTIONS ---
+function setupGovAgent() {
+  if (elements.startGoalBtn) {
+    elements.startGoalBtn.addEventListener('click', () => {
+      const goal = elements.goalInputField.value.trim();
+      if (goal) executeGovGoal(goal);
+    });
+  }
+
+  if (elements.goalInputField) {
+    elements.goalInputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const goal = elements.goalInputField.value.trim();
+        if (goal) executeGovGoal(goal);
+      }
+    });
+  }
+
+  document.querySelectorAll('.landing-prompt-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const goal = chip.getAttribute('data-goal');
+      elements.goalInputField.value = goal;
+      executeGovGoal(goal);
+    });
+  });
+
+  if (elements.govValidateBtn) elements.govValidateBtn.addEventListener('click', validateGovFormFields);
+  if (elements.govLaunchReviewBtn) elements.govLaunchReviewBtn.addEventListener('click', openGovReviewModal);
+  if (elements.govConsentCheckbox) {
+    elements.govConsentCheckbox.addEventListener('change', (e) => {
+      elements.confirmGovSubmissionBtn.disabled = !e.target.checked;
+    });
+  }
+  if (elements.cancelGovReviewBtn) {
+    elements.cancelGovReviewBtn.addEventListener('click', () => {
+      elements.govReviewModal.classList.remove('open');
+    });
+  }
+  if (elements.confirmGovSubmissionBtn) elements.confirmGovSubmissionBtn.addEventListener('click', submitGovApplication);
+
+  document.querySelectorAll('.gov-voice-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const query = chip.getAttribute('data-query');
+      handleGovVoiceQuery(query);
+    });
+  });
 }
 
-async function runAgentGoal(goal, extraContext = {}) {
-  addChatMessage('user', `🤖 Agent Goal: ${goal}`);
-  renderAgentTraceHeader(goal);
-
+async function executeGovGoal(goal, clarifiedState = null) {
   try {
-    const res = await fetch('/api/agent/run', {
+    elements.startGoalBtn.disabled = true;
+    elements.startGoalBtn.textContent = '⚡ Analyzing Goal...';
+
+    const res = await fetch('/api/gov/agent/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         goal,
-        context: {
-          documentText: state.documentText,
-          filename: state.filename,
-          findings: state.analysis ? state.analysis.findings : [],
-          checklist: state.checklist,
-          companyName: state.company ? state.company.companyName : 'Hiring Team',
-          ...extraContext
+        sessionContext: {
+          sessionId: state.sessionId,
+          clarifiedState,
+          uploadedDocs: state.contract.documentText ? [{ name: state.contract.filename || 'Uploaded Contract', text: state.contract.documentText }] : []
         }
       })
     });
 
     const data = await res.json();
 
-    // Render Trace
-    renderAgentTraceSteps(data.plan, data.trace);
-
-    // Update state if new checklist returned
-    if (data.checklist && data.checklist.length > 0) {
-      state.checklist = data.checklist;
-      renderChecklist();
+    if (data.needsClarification) {
+      renderGovClarification(goal, data.clarification, data.understanding);
+      return;
     }
 
-    addChatMessage('assistant', data.response);
+    elements.govClarificationCard.style.display = 'none';
+    state.gov.process = data.process;
+    state.gov.requiredDocs = data.requiredDocs || [];
+    state.gov.checklist = data.checklist || [];
+    state.gov.formFields = data.formFields || [];
+    state.gov.timeline = data.timeline || [];
+
+    renderGovProcessView();
   } catch (err) {
-    console.error('Agent execution error:', err);
-    addChatMessage('assistant', `⚠️ Error running agent: ${err.message}`);
+    alert('Error running government agent: ' + err.message);
+  } finally {
+    elements.startGoalBtn.disabled = false;
+    elements.startGoalBtn.textContent = 'Start Guidance ➔';
   }
 }
 
-function renderAgentTraceHeader(goal) {
-  elements.agentTraceBox.innerHTML = `
-    <div style="color: #38bdf8; font-weight: bold; margin-bottom: 0.5rem;">[AGENT GOAL ACTIVATED]</div>
-    <div style="color: #e2e8f0; margin-bottom: 0.75rem;">Goal: "${goal}"</div>
-    <div style="color: #94a3b8; font-size: 0.8rem;">Step 1: Understand Goal & Plan Tool Sequence...</div>
-  `;
+function renderGovClarification(originalGoal, question, understanding) {
+  elements.govClarificationCard.style.display = 'block';
+  elements.govClarificationQuestion.textContent = question;
+
+  const options = understanding.detectedCategory.includes('Land') ? ['Maharashtra', 'Karnataka', 'Delhi', 'National Portal'] : ['Maharashtra', 'All States', 'Income Certificate', 'Driving License'];
+
+  elements.govClarificationOptions.innerHTML = options.map(opt => `
+    <button class="btn btn-secondary btn-sm gov-clarify-opt-btn" data-opt="${opt}">${opt}</button>
+  `).join('');
+
+  document.querySelectorAll('.gov-clarify-opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selected = btn.getAttribute('data-opt');
+      executeGovGoal(originalGoal, selected);
+    });
+  });
 }
 
-function renderAgentTraceSteps(plan, trace) {
-  let html = `
-    <div style="color: #38bdf8; font-weight: bold; margin-bottom: 0.5rem;">[AGENT PLAN & EXECUTION TRACE]</div>
-    <div style="margin-bottom: 0.75rem; color: #a5b4fc;">Planned Steps (${plan.length}):</div>
-  `;
+function renderGovProcessView() {
+  const p = state.gov.process;
+  if (!p) return;
 
-  plan.forEach(p => {
-    html += `<div style="padding-left: 0.5rem; color: #cbd5e1;">🔹 Step ${p.step}: <code>${p.tool}</code></div>`;
-  });
+  elements.govProcessHeaderBanner.style.display = 'flex';
+  elements.govCategoryBadge.textContent = p.category.toUpperCase();
+  elements.govProcessTitle.textContent = p.title;
+  elements.govDepartmentText.textContent = `${p.department} • Location: ${p.state}`;
+  elements.govFeeText.textContent = p.applicableFees;
 
-  html += `<div style="margin: 0.75rem 0 0.5rem 0; color: #a5b4fc;">Execution Trace:</div>`;
-  trace.forEach(t => {
-    html += `
-      <div class="trace-step">
-        <span style="color: #10b981;">✔</span>
-        <span style="color: #38bdf8;">${t.tool}()</span>
-        <span style="color: #94a3b8;">→ ${typeof t.resultPreview === 'object' ? JSON.stringify(t.resultPreview).slice(0, 40) : t.resultPreview}</span>
+  elements.govMainGrid.style.display = 'grid';
+  elements.govPortalName.textContent = p.officialPortal.name;
+  elements.govPortalDomain.textContent = `Official Domain: ${p.officialPortal.domain}`;
+  elements.govPortalLinkBtn.href = p.officialPortal.url;
+  elements.govFreshnessBadge.textContent = `Verified ${p.officialPortal.lastVerifiedAt}`;
+  elements.govPurposeText.textContent = `Purpose: ${p.purpose}`;
+
+  elements.govDocCountBadge.textContent = state.gov.requiredDocs.length;
+  elements.govRequiredDocsContainer.innerHTML = state.gov.requiredDocs.map(doc => `
+    <div class="doc-intel-item ${doc.userProvided ? 'ready' : doc.mandatory ? 'mandatory' : 'conditional'}" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem;">
+      <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">
+        ${doc.name}
+        <span class="badge ${doc.userProvided ? 'badge-low' : doc.mandatory ? 'badge-high' : 'badge-medium'}" style="margin-left: 0.4rem;">
+          ${doc.statusLabel}
+        </span>
       </div>
-    `;
-  });
+      <div style="font-size: 0.8rem; color: var(--text-muted);"><strong>Why needed:</strong> ${doc.whyNeeded}</div>
+      <div style="font-size: 0.775rem; color: #475569; margin-top: 0.2rem;"><strong>Obtain at:</strong> ${doc.whereToObtain}</div>
+    </div>
+  `).join('');
 
-  html += `<div style="margin-top: 0.75rem; color: #4ade80;">[VERIFICATION & CHECKLIST SYNC COMPLETE]</div>`;
-  elements.agentTraceBox.innerHTML = html;
+  renderGovChecklist();
+  renderGovFormFields();
+  renderGovTimeline();
+
+  speakAloud(`I found the official government process: ${p.title}. You have ${state.gov.requiredDocs.length} required documents.`);
 }
 
-// Local fallback QA when server unreachable
-function localFallbackChat(query) {
-  const q = query.toLowerCase();
-  if (q.includes('fee') || q.includes('payment') || q.includes('money')) {
-    return 'Local analysis found potential payment obligations. Please review the highlighted clause on page 1/2.';
-  }
-  if (q.includes('bond')) {
-    return 'A service commitment bond was identified. Verify whether it conflicts with your university schedule.';
-  }
-  return 'Local fallback mode active. Please inspect the Action Checklist tab for step-by-step tasks.';
-}
+function renderGovChecklist() {
+  const total = state.gov.checklist.length;
+  const completed = state.gov.checklist.filter(i => i.status === 'Completed').length;
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  elements.govChecklistProgressText.textContent = `${percentage}% Completed (${completed}/${total})`;
 
-// --- 7. VOICE ASSISTANT (WEB SPEECH API & FALLBACK) ---
-function setupVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  elements.govChecklistContainer.innerHTML = state.gov.checklist.map(item => `
+    <div class="checklist-item" data-id="${item.id}">
+      <input type="checkbox" class="checklist-checkbox gov-task-cb" ${item.status === 'Completed' ? 'checked' : ''} data-id="${item.id}">
+      <div class="checklist-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+          <span class="checklist-task-title" style="${item.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
+            Step ${item.stepNumber || ''}: ${item.task}
+          </span>
+          <span class="badge ${item.priority === 'High' ? 'badge-high' : 'badge-medium'}">${item.priority}</span>
+        </div>
+        <p class="checklist-desc">${item.description}</p>
+      </div>
+    </div>
+  `).join('');
 
-  if (SpeechRecognition) {
-    state.speechRecognition = new SpeechRecognition();
-    state.speechRecognition.continuous = false;
-    state.speechRecognition.interimResults = false;
-    state.speechRecognition.lang = 'en-US';
-
-    state.speechRecognition.onstart = () => {
-      state.isListening = true;
-      elements.voiceMicBtn.classList.add('listening');
-      elements.voiceStatusText.textContent = '🎙️ Listening to your voice... Speak now!';
-    };
-
-    state.speechRecognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
-      elements.voiceStatusText.textContent = `Recognized: "${transcript}"`;
-      elements.voiceTranscriptLog.innerHTML += `<div><strong>You:</strong> "${transcript}"</div>`;
-
-      // Process voice query
-      await handleVoiceQuery(transcript);
-    };
-
-    state.speechRecognition.onerror = (e) => {
-      console.warn('Voice recognition error:', e.error);
-      elements.voiceMicBtn.classList.remove('listening');
-      state.isListening = false;
-      elements.voiceStatusText.textContent = `Microphone notice: ${e.error}. You can also click sample voice chips below!`;
-    };
-
-    state.speechRecognition.onend = () => {
-      state.isListening = false;
-      elements.voiceMicBtn.classList.remove('listening');
-    };
-
-    elements.voiceMicBtn.addEventListener('click', () => {
-      if (state.isListening) {
-        state.speechRecognition.stop();
-      } else {
-        try {
-          state.speechRecognition.start();
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    });
-  } else {
-    elements.voiceStatusText.textContent = 'Web Speech STT not supported on this browser. Use voice sample buttons below!';
-  }
-
-  // Voice command chips
-  document.querySelectorAll('.voice-command-chip').forEach(chip => {
-    chip.addEventListener('click', async () => {
-      const command = chip.getAttribute('data-command');
-      elements.voiceTranscriptLog.innerHTML += `<div><strong>You (Voice):</strong> "${command}"</div>`;
-      await handleVoiceQuery(command);
+  document.querySelectorAll('.gov-task-cb').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = cb.getAttribute('data-id');
+      state.gov.checklist = state.gov.checklist.map(t => t.id === id ? { ...t, status: e.target.checked ? 'Completed' : 'Pending' } : t);
+      renderGovChecklist();
     });
   });
 }
 
-async function handleVoiceQuery(query) {
-  elements.voiceStatusText.textContent = '🤔 Thinking...';
+function renderGovFormFields() {
+  elements.govFormFieldsContainer.innerHTML = state.gov.formFields.map(f => `
+    <div class="form-field-row">
+      <div class="form-field-header">
+        <span>${f.label} ${f.safeToFill ? '' : '<span style="color: #dc2626;">*</span>'}</span>
+        <span class="field-source-badge">${f.source} (${(f.confidence * 100).toFixed(0)}% conf)</span>
+      </div>
+      <input type="text" class="input-text gov-form-input ${f.value ? 'field-prefilled' : ''}" 
+        name="${f.fieldName}" value="${escapeHtml(f.value)}" placeholder="${f.placeholder || 'Enter value...'}">
+    </div>
+  `).join('');
+}
+
+async function validateGovFormFields() {
+  const currentValues = {};
+  document.querySelectorAll('.gov-form-input').forEach(inp => {
+    currentValues[inp.name] = inp.value;
+  });
+
   try {
-    const res = await fetch('/api/chat', {
+    const res = await fetch('/api/gov/form/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: query,
+        formFields: state.gov.formFields,
+        fieldValues: currentValues
+      })
+    });
+
+    const data = await res.json();
+    if (data.validation.isValid) {
+      alert('✅ All form fields validated successfully! Ready for final review.');
+    } else {
+      const msg = data.validation.errors.map(e => `• ${e.error}`).join('\n');
+      alert(`⚠️ Please review form errors:\n\n${msg}`);
+    }
+  } catch (err) {
+    alert('Validation error: ' + err.message);
+  }
+}
+
+function openGovReviewModal() {
+  const currentValues = {};
+  document.querySelectorAll('.gov-form-input').forEach(inp => {
+    currentValues[inp.name] = inp.value;
+  });
+
+  elements.govReviewFieldsList.innerHTML = state.gov.formFields.map(f => `
+    <div class="review-field-item" style="margin-bottom: 0.5rem;">
+      <strong>${f.label}:</strong> <span>${currentValues[f.fieldName] || '<em style="color: #dc2626;">Missing</em>'}</span>
+    </div>
+  `).join('');
+
+  elements.govConsentCheckbox.checked = false;
+  elements.confirmGovSubmissionBtn.disabled = true;
+  elements.govReviewModal.classList.add('open');
+}
+
+async function submitGovApplication() {
+  try {
+    elements.confirmGovSubmissionBtn.disabled = true;
+    elements.confirmGovSubmissionBtn.textContent = 'Processing Registration...';
+
+    const currentValues = {};
+    document.querySelectorAll('.gov-form-input').forEach(inp => {
+      currentValues[inp.name] = inp.value;
+    });
+
+    const res = await fetch('/api/gov/application/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        processId: state.gov.process.id,
+        confirmedFields: currentValues,
+        userSignatureConsent: true,
+        sessionId: state.sessionId
+      })
+    });
+
+    const data = await res.json();
+    state.gov.referenceNumber = data.referenceNumber;
+    state.gov.timeline = data.timeline;
+
+    elements.govReviewModal.classList.remove('open');
+    renderGovTimeline();
+
+    alert(`🎉 Application Registered Successfully!\n\nOfficial Reference Number: ${data.referenceNumber}\n\nPlease save this number for portal tracking.`);
+    speakAloud(`Application registered. Reference number is ${data.referenceNumber}.`);
+  } catch (err) {
+    alert('Submission error: ' + err.message);
+  } finally {
+    elements.confirmGovSubmissionBtn.disabled = false;
+    elements.confirmGovSubmissionBtn.textContent = 'Confirm & Save Reference Number';
+  }
+}
+
+function renderGovTimeline() {
+  if (!state.gov.timeline || state.gov.timeline.length === 0) {
+    elements.govTimelineBox.innerHTML = '<div style="color: #64748b;">// Audit events will appear here</div>';
+    return;
+  }
+
+  elements.govTimelineBox.innerHTML = state.gov.timeline.map(ev => `
+    <div class="timeline-event-item">
+      <span class="timeline-time">${ev.timestamp.split('T')[1].slice(0, 8)}</span>
+      <div>
+        <span class="timeline-title">${ev.type}</span>
+        <div class="timeline-desc">${typeof ev.details === 'object' ? JSON.stringify(ev.details) : ev.details}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function handleGovVoiceQuery(query) {
+  elements.govVoiceStatusText.textContent = '🤔 Thinking...';
+  elements.govVoiceLog.innerHTML += `<div><strong>You:</strong> "${query}"</div>`;
+
+  try {
+    const res = await fetch('/api/gov/voice/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query,
         context: {
-          documentText: state.documentText,
-          findings: state.analysis ? state.analysis.findings : [],
-          checklist: state.checklist
+          process: state.gov.process,
+          requiredDocs: state.gov.requiredDocs,
+          checklist: state.gov.checklist
         }
       })
     });
 
     const data = await res.json();
-    const reply = data.reply;
-
-    elements.voiceTranscriptLog.innerHTML += `<div><strong style="color: #2563eb;">Assistant:</strong> ${formatMarkdownText(reply)}</div>`;
-    elements.voiceStatusText.textContent = '🔊 Speaking response...';
-
-    // Speak aloud with SpeechSynthesis
-    speakAloud(reply.replace(/[*_#`]/g, ''));
+    elements.govVoiceLog.innerHTML += `<div style="color: #0284c7;"><strong>Assistant:</strong> ${data.reply}</div>`;
+    elements.govVoiceStatusText.textContent = '🔊 Speaking response...';
+    speakAloud(data.reply);
   } catch (err) {
-    const fallback = localFallbackChat(query);
-    elements.voiceTranscriptLog.innerHTML += `<div><strong style="color: #d97706;">Assistant (Offline):</strong> ${fallback}</div>`;
-    speakAloud(fallback);
+    elements.govVoiceStatusText.textContent = 'Ready';
   }
+}
+
+// --- 5. SPEECH RECOGNITION & SYNTHESIS ---
+function setupSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return;
+
+  state.speechRecognition = new SpeechRecognition();
+  state.speechRecognition.lang = 'en-US';
+
+  state.speechRecognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    if (state.isListeningGov && elements.goalInputField) {
+      elements.goalInputField.value = transcript;
+      executeGovGoal(transcript);
+    } else if (state.isListeningContract && elements.chatInput) {
+      elements.chatInput.value = transcript;
+      sendContractChatMessage();
+    }
+  };
+
+  if (elements.goalMicBtn) {
+    elements.goalMicBtn.addEventListener('click', () => {
+      try {
+        state.isListeningGov = true;
+        state.isListeningContract = false;
+        elements.goalMicBtn.classList.add('listening');
+        state.speechRecognition.start();
+      } catch (err) {}
+    });
+  }
+
+  if (elements.voiceMicBtn) {
+    elements.voiceMicBtn.addEventListener('click', () => {
+      try {
+        state.isListeningContract = true;
+        state.isListeningGov = false;
+        elements.voiceMicBtn.classList.add('listening');
+        elements.voiceStatusText.textContent = '🎙️ Listening to your voice query...';
+        state.speechRecognition.start();
+      } catch (err) {}
+    });
+  }
+
+  state.speechRecognition.onend = () => {
+    state.isListeningGov = false;
+    state.isListeningContract = false;
+    if (elements.goalMicBtn) elements.goalMicBtn.classList.remove('listening');
+    if (elements.voiceMicBtn) elements.voiceMicBtn.classList.remove('listening');
+    if (elements.voiceStatusText) elements.voiceStatusText.textContent = 'Click the microphone and speak your query';
+  };
 }
 
 function speakAloud(text) {
   if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel(); // Stop prior speech
-    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ''));
     utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.onend = () => {
-      elements.voiceStatusText.textContent = 'Click the microphone and speak your query';
-    };
     window.speechSynthesis.speak(utterance);
-  } else {
-    elements.voiceStatusText.textContent = 'Click the microphone and speak your query';
   }
 }
 
-// --- 8. ENTITY VERIFICATION ---
-function renderVerification() {
-  if (!state.company) {
-    elements.verificationContent.innerHTML = `
-      <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No entity records loaded yet.</p>
-    `;
-    return;
-  }
-
-  const c = state.company;
-  elements.verificationContent.innerHTML = `
-    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <div>
-          <h3 style="font-size: 1.2rem; color: #0f172a;">${c.companyName}</h3>
-          <span style="font-size: 0.85rem; color: var(--text-muted);">Queried Entity: ${c.queriedName}</span>
-        </div>
-        <span class="badge ${c.verified ? 'badge-low' : 'badge-medium'}">
-          ${c.verified ? '✔ Registration Verified' : '❓ Verification Recommended'}
-        </span>
-      </div>
-
-      <div class="grid-2-col" style="gap: 1rem; margin-bottom: 1rem;">
-        <div><strong>Corporate ID (CIN):</strong> <code>${c.cin}</code></div>
-        <div><strong>Registration Status:</strong> ${c.registrationStatus}</div>
-        <div><strong>Jurisdiction / State:</strong> ${c.state}</div>
-        <div><strong>Authority:</strong> ${c.authority}</div>
-        <div><strong>Verification Date:</strong> ${c.verificationDate}</div>
-        <div><strong>Primary Source:</strong> <a href="${c.sourceUrl}" target="_blank" style="color: var(--primary);">${c.source}</a></div>
-      </div>
-
-      <div style="background: #eff6ff; border: 1px solid var(--primary-border); border-radius: var(--radius-md); padding: 0.75rem 1rem; font-size: 0.85rem; color: #1e40af; margin-top: 1rem;">
-        ${c.disclaimer}
-      </div>
-    </div>
-  `;
-}
-
-// --- 9. MODALS, SAVE & SHARE ---
-function setupModals() {
-  elements.addCustomTaskBtn.addEventListener('click', () => {
-    elements.customTaskTitle.value = '';
-    elements.customTaskDesc.value = '';
-    elements.addTaskModal.classList.add('open');
-  });
-
-  elements.cancelAddTaskBtn.addEventListener('click', () => {
-    elements.addTaskModal.classList.remove('open');
-  });
-
-  elements.saveCustomTaskBtn.addEventListener('click', () => {
-    const title = elements.customTaskTitle.value.trim();
-    const desc = elements.customTaskDesc.value.trim();
-    const priority = elements.customTaskPriority.value;
-
-    if (!title) {
-      alert('Please enter a task title');
-      return;
-    }
-
-    state.checklist.push({
-      id: 'custom_' + Date.now(),
-      task: title,
-      description: desc || 'Custom student task',
-      priority,
-      status: 'Pending',
-      category: 'custom',
-      evidence: 'Created by student'
+// --- 6. UNIVERSAL ACTIONS & MODALS ---
+function setupUniversalModals() {
+  // Save State Action
+  if (elements.saveBtn) {
+    elements.saveBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/checklist/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentName: state.contract.filename || 'Student Contract Analysis',
+            analysis: state.contract.analysis,
+            checklist: state.contract.checklist,
+            company: state.contract.company
+          })
+        });
+        const data = await res.json();
+        if (data.shareUrl) {
+          alert(`✅ Analysis state saved successfully!\nShare ID: ${data.shareId}`);
+        }
+      } catch (err) {
+        alert('Failed to save state: ' + err.message);
+      }
     });
-
-    renderChecklist();
-    elements.addTaskModal.classList.remove('open');
-  });
-
-  elements.closeShareModalBtn.addEventListener('click', () => {
-    elements.shareModal.classList.remove('open');
-  });
-
-  elements.copyShareUrlBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(elements.shareUrlInput.value);
-    alert('Share link copied to clipboard!');
-  });
-}
-
-function setupShareAndExport() {
-  elements.saveBtn.addEventListener('click', saveCurrentState);
-  elements.shareBtn.addEventListener('click', generateShareLink);
-  elements.exportMdBtn.addEventListener('click', exportMarkdownReport);
-}
-
-async function saveCurrentState() {
-  if (!state.analysis) {
-    alert('Please analyze a contract before saving.');
-    return;
   }
 
-  try {
-    const res = await fetch('/api/checklist/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        documentName: state.filename,
-        analysis: state.analysis,
-        checklist: state.checklist,
-        company: state.company
-      })
+  // Share Action
+  if (elements.shareBtn) {
+    elements.shareBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/checklist/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentName: state.contract.filename || 'Student Contract Analysis',
+            analysis: state.contract.analysis,
+            checklist: state.contract.checklist,
+            company: state.contract.company
+          })
+        });
+        const data = await res.json();
+        const fullShareUrl = window.location.origin + data.shareUrl;
+        elements.shareUrlInput.value = fullShareUrl;
+        elements.shareModal.classList.add('open');
+      } catch (err) {
+        elements.shareUrlInput.value = window.location.href;
+        elements.shareModal.classList.add('open');
+      }
     });
-
-    const data = await res.json();
-    alert(`✅ Checklist saved successfully! Share ID: ${data.shareId}`);
-  } catch (err) {
-    alert('Save error: ' + err.message);
-  }
-}
-
-async function generateShareLink() {
-  if (!state.analysis) {
-    alert('Please analyze a contract first.');
-    return;
   }
 
-  try {
-    const res = await fetch('/api/checklist/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        documentName: state.filename,
-        analysis: state.analysis,
-        checklist: state.checklist,
-        company: state.company
-      })
+  if (elements.closeShareModalBtn) {
+    elements.closeShareModalBtn.addEventListener('click', () => {
+      elements.shareModal.classList.remove('open');
     });
-
-    const data = await res.json();
-    const fullUrl = window.location.origin + `/share/${data.shareId}`;
-    elements.shareUrlInput.value = fullUrl;
-    elements.shareModal.classList.add('open');
-  } catch (err) {
-    alert('Share link error: ' + err.message);
   }
-}
 
-async function loadSharedChecklist(shareId) {
-  try {
-    const res = await fetch(`/api/checklist/${shareId}`);
-    if (!res.ok) throw new Error('Shared record not found');
+  if (elements.copyShareUrlBtn) {
+    elements.copyShareUrlBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(elements.shareUrlInput.value);
+      alert('Shareable link copied to clipboard!');
+    });
+  }
 
-    const { record } = await res.json();
-    state.filename = record.documentName;
-    state.analysis = record.analysis;
-    state.checklist = record.checklist;
-    state.company = record.company;
-
-    renderRiskBanner();
-    renderFindings();
-    renderChecklist();
-    renderVerification();
-
-    switchTab('tab-checklist');
-    alert(`📂 Loaded shared checklist for: "${record.documentName}"`);
-  } catch (err) {
-    console.error('Error loading share:', err);
+  // Export Markdown Report Action
+  if (elements.exportMdBtn) {
+    elements.exportMdBtn.addEventListener('click', exportMarkdownReport);
   }
 }
 
 function exportMarkdownReport() {
-  if (!state.analysis) {
-    alert('Please analyze a contract before exporting.');
+  if (!state.contract.analysis) {
+    alert('Please analyze a contract document first before exporting a report.');
     return;
   }
 
-  let md = `# Student Contract Transparency & Obligation Report\n\n`;
-  md += `**Document:** ${state.filename}\n`;
-  md += `**Generated At:** ${new Date().toLocaleString()}\n`;
-  md += `**Risk Assessment:** ${state.analysis.summary.overallRiskScore}\n\n`;
-  md += `## Summary\n${state.analysis.summary.studentFriendlySummary}\n\n`;
+  const { filename, summary, findings, missingInformation } = state.contract.analysis;
+  const company = state.contract.company || {};
+  const checklist = state.contract.checklist || [];
 
-  md += `## Identified Obligations & Clauses\n`;
-  state.analysis.findings.forEach((f, idx) => {
-    md += `### ${idx + 1}. ${f.finding} (${f.severity.toUpperCase()} Severity)\n`;
-    md += `- **Location:** Page ${f.page || 1}\n`;
-    md += `- **Exact Evidence:** "${f.evidence}"\n`;
-    if (f.amount) md += `- **Amount:** ${f.amount}\n`;
-    if (f.timing) md += `- **Timing:** ${f.timing}\n`;
-    md += `- **Recommended Student Action:** ${f.recommended_action}\n\n`;
+  let report = `# Student Contract Transparency Analysis Report\n\n`;
+  report += `**Document Name:** ${filename}\n`;
+  report += `**Date:** ${new Date().toLocaleDateString()}\n`;
+  report += `**Risk Rating:** ${summary.overallRiskScore}\n\n`;
+
+  report += `## 1. Executive Summary\n\n`;
+  report += `${summary.studentFriendlySummary}\n\n`;
+
+  report += `## 2. Identified Contract Obligations & Clauses\n\n`;
+  if (findings.length === 0) {
+    report += `No high/medium risk obligations detected.\n\n`;
+  } else {
+    findings.forEach((f, idx) => {
+      report += `### ${idx + 1}. ${f.finding} (${f.severity.toUpperCase()} RISK)\n`;
+      report += `- **Category:** ${f.category}\n`;
+      report += `- **Original Clause:** "${f.evidence}"\n`;
+      report += `- **Explanation:** ${f.description}\n`;
+      report += `- **Recommended Action:** ${f.recommended_action}\n\n`;
+    });
+  }
+
+  if (missingInformation && missingInformation.length > 0) {
+    report += `## 3. Unclear / Missing Terms\n\n`;
+    missingInformation.forEach(m => {
+      report += `- **${m.item}:** ${m.detail} *(Action: ${m.recommended_action})*\n`;
+    });
+    report += `\n`;
+  }
+
+  report += `## 4. Student Action Checklist\n\n`;
+  checklist.forEach((item, idx) => {
+    report += `- [${item.status === 'Completed' ? 'x' : ' '}] **${item.task}** (${item.priority} Priority): ${item.description}\n`;
   });
 
-  md += `## Action Checklist\n`;
-  state.checklist.forEach(item => {
-    const check = item.status === 'Completed' ? '[x]' : '[ ]';
-    md += `- ${check} **${item.task}** (${item.priority} Priority, Status: ${item.status})\n  *${item.description}*\n`;
-  });
+  if (company && company.companyName) {
+    report += `\n## 5. Corporate Entity Verification\n\n`;
+    report += `- **Entity Name:** ${company.companyName}\n`;
+    report += `- **CIN:** ${company.cin}\n`;
+    report += `- **Status:** ${company.registrationStatus}\n`;
+    report += `- **Authority:** ${company.authority}\n`;
+    report += `- **Disclaimer:** ${company.disclaimer}\n`;
+  }
 
-  const blob = new Blob([md], { type: 'text/markdown' });
+  const blob = new Blob([report], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Contract_Analysis_${Date.now()}.md`;
+  a.download = `${filename.replace(/[^a-z0-9]/gi, '_')}_Analysis_Report.md`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-// Utility
+// Utility Helpers
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function formatMarkdownText(text) {

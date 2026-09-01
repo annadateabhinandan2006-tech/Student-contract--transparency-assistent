@@ -3,278 +3,615 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Contract Transparency & Obligation Assistant</title>
+  <title>Student Contract Transparency Assistant • Protect Your Future</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2222%22 font-size=%2222%22>🛡️</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236366f1%22 stroke-width=%222%22><path d=%22M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z%22/></svg>">
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
+  <!-- Global Header -->
   <header class="app-header">
     <div class="brand-section">
-      <div class="brand-logo">🛡️</div>
+      <div class="brand-logo-container" title="Student Contract Transparency Shield">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z"></path>
+          <path d="M9 12l2 2 4-4"></path>
+        </svg>
+      </div>
       <div>
-        <h1 class="brand-title">Student Contract & Obligation Assistant</h1>
-        <p class="brand-subtitle">Protecting Students from Hidden Financial, Bond & Exit Obligations</p>
+        <h1 class="brand-title" id="appHeaderTitle">Student Contract Transparency Assistant</h1>
+        <p class="brand-subtitle" id="appHeaderSubtitle">Protecting Students from Hidden Obligations</p>
       </div>
     </div>
 
+    <!-- Center Mode Switcher -->
+    <div class="header-center-nav">
+      <button class="nav-pill-btn active" id="modeContractBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z"></path></svg>
+        <span>Contract Analyzer</span>
+        <span class="mode-tag-primary">PRIMARY</span>
+      </button>
+      <button class="nav-pill-btn" id="modeGovBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        <span>Gov Agent</span>
+      </button>
+    </div>
+
+    <!-- Right Actions -->
     <div class="header-status-group">
       <div id="healthBadge" class="health-badge">
         <span class="health-dot" id="healthDot"></span>
-        <span id="healthStatusText">🟢 Cloud AI Active</span>
+        <span id="healthStatusText">Cloud AI Active</span>
       </div>
 
-      <div class="header-actions">
-        <button id="saveBtn" class="btn btn-secondary btn-sm" title="Save Checklist & Analysis">💾 Save</button>
-        <button id="shareBtn" class="btn btn-secondary btn-sm" title="Generate Shareable Link">🔗 Share</button>
-        <button id="exportMdBtn" class="btn btn-secondary btn-sm" title="Export as Markdown Report">📥 Export Report</button>
-      </div>
+      <button id="saveBtn" class="btn-header" title="Save Current Progress">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>Save</span>
+      </button>
+
+      <button id="shareBtn" class="btn-header" title="Share Analysis & Checklist">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+        <span>Share</span>
+      </button>
+
+      <button id="exportMdBtn" class="btn-header btn-header-primary" title="Export Markdown Report">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>Export Report</span>
+      </button>
     </div>
   </header>
 
   <!-- Main Container -->
   <main class="app-container">
 
-    <!-- Tab Navigation -->
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="tab-upload">
-        <span>📄</span> Upload & Analyze
-      </button>
-      <button class="tab-btn" data-tab="tab-findings">
-        <span>🔍</span> Obligation Findings <span id="findingsCountBadge" class="tab-badge">0</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-checklist">
-        <span>✅</span> Action Checklist <span id="checklistProgressBadge" class="tab-badge">0%</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-agent">
-        <span>🤖</span> Agentic AI & Chatbot
-      </button>
-      <button class="tab-btn" data-tab="tab-voice">
-        <span>🎙️</span> Voice Assistant
-      </button>
-      <button class="tab-btn" data-tab="tab-verification">
-        <span>🏛️</span> Entity Verification
-      </button>
-    </nav>
+    <!-- ======================================================== -->
+    <!-- SECTION A: PRIMARY STUDENT CONTRACT TRANSPARENCY VIEW -->
+    <!-- ======================================================== -->
+    <div id="contractViewContainer" class="tab-content active">
 
-    <!-- Tab 1: Upload & Analyze -->
-    <section id="tab-upload" class="tab-content active">
-      <div class="grid-2-col">
-        <!-- Left: Upload Box -->
-        <div class="card">
-          <h2 class="card-title">Upload Contract / Offer Letter</h2>
-          <p class="card-description">Upload your internship offer letter, training agreement, or employment contract (PDF, TXT, DOCX).</p>
+      <!-- Navigation Tabs -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="tab-upload">
+          <span>📄</span> Upload & Hero
+        </button>
+        <button class="tab-btn" data-tab="tab-findings">
+          <span>🔍</span> Obligation Findings <span id="findingsCountBadge" class="tab-badge">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-checklist">
+          <span>✅</span> Action Checklist <span id="checklistProgressBadge" class="tab-badge">0%</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-agent">
+          <span>🤖</span> AI Assistant & Trace
+        </button>
+        <button class="tab-btn" data-tab="tab-voice">
+          <span>🎙️</span> Voice Assistant
+        </button>
+        <button class="tab-btn" data-tab="tab-verification">
+          <span>🏛️</span> Entity Verification
+        </button>
+      </nav>
 
-          <div id="dropzone" class="upload-dropzone">
-            <div class="dropzone-icon">📁</div>
-            <div class="dropzone-title">Click to upload or drag & drop file</div>
-            <div class="dropzone-subtitle">Supported: PDF, Text files up to 10MB</div>
-            <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx,.md" style="display: none;">
+      <!-- TAB 1: UPLOAD, HERO, SAMPLE DOCUMENTS & TRUST HIGHLIGHTS -->
+      <section id="tab-upload" class="tab-content active">
+
+        <!-- Hero Section & Upload Card -->
+        <div class="contract-hero-card">
+          <div class="hero-content-row">
+            <div class="hero-text-side">
+              <span class="hero-pill-badge">✦ AI-Powered Contract Analysis</span>
+              <h2 class="hero-main-title">
+                Understand Every Clause.
+                <span class="hero-gradient-title">Protect Your Future.</span>
+              </h2>
+              <p class="hero-description">
+                Upload your internship, training, NDA, or employment contract and let AI uncover hidden obligations, financial risks, penalties, bonds, exit clauses, and important terms in simple language.
+              </p>
+
+              <!-- Main Upload Box -->
+              <div id="dropzone" class="hero-upload-box">
+                <div class="upload-left-side">
+                  <div class="upload-doc-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                  </div>
+                  <div>
+                    <div class="upload-box-title">Upload a contract to get started</div>
+                    <div class="upload-box-sub">Supports PDF, DOCX, TXT • Up to 10MB</div>
+                  </div>
+                </div>
+                <div class="upload-right-side">
+                  <button type="button" class="btn-hero-browse" id="browseBtn">
+                    <span>Browse Files</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </button>
+                  <span class="drag-hint-text">or Drag & drop file here</span>
+                  <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx,.md" style="display: none;">
+                </div>
+              </div>
+
+              <!-- Textarea Paste Option -->
+              <div class="or-divider">OR PASTE TEXT DIRECTLY</div>
+
+              <div class="textarea-wrapper">
+                <textarea id="pastedText" class="input-text" rows="4" placeholder="Paste the terms, clauses, or text of your contract here..."></textarea>
+                <span class="char-counter" id="charCounter">0 / 50000</span>
+              </div>
+
+              <!-- Privacy Banner -->
+              <div class="privacy-banner">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>🔒 <strong>Your document stays private.</strong> We process documents securely and never store your contracts.</span>
+              </div>
+
+              <button id="analyzeBtn" class="btn-analyze-large">
+                <span id="analyzeBtnText">Analyze Document ✦</span>
+              </button>
+              
+              <!-- Progressive Analysis Loading Bar -->
+              <div id="analysisLoadingState" class="analysis-loading-card" style="display: none;">
+                <div class="loading-spinner-row">
+                  <div class="spinner"></div>
+                  <div>
+                    <strong id="loadingStepTitle">Analyzing your contract...</strong>
+                    <div id="loadingStepSub" style="font-size: 0.8rem; color: #64748b;">Reading document & extracting clauses</div>
+                  </div>
+                </div>
+                <div class="loading-progress-track">
+                  <div id="loadingProgressFill" class="loading-progress-bar" style="width: 25%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Visual Hologram & Graphic -->
+            <div class="hero-graphic-side">
+              <svg class="floating-shield-svg" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="shieldGrad" x1="20" y1="20" x2="180" y2="200" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#818cf8" />
+                    <stop offset="0.5" stop-color="#6366f1" />
+                    <stop offset="1" stop-color="#4f46e5" />
+                  </linearGradient>
+                  <linearGradient id="glowGrad" x1="100" y1="0" x2="100" y2="200" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#c084fc" stop-opacity="0.4" />
+                    <stop offset="1" stop-color="#6366f1" stop-opacity="0" />
+                  </linearGradient>
+                  <filter id="shadowFilter" x="0" y="0" width="200" height="220" filterUnits="userSpaceOnUse">
+                    <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#4f46e5" flood-opacity="0.25" />
+                  </filter>
+                </defs>
+                <path d="M100 15 L35 42 V105 C35 155 72 196 100 208 C128 196 165 155 165 105 V42 L100 15 Z" fill="url(#shieldGrad)" filter="url(#shadowFilter)" />
+                <path d="M100 28 L45 50 V102 C45 145 77 182 100 193 C123 182 155 145 155 102 V50 L100 28 Z" fill="#ffffff" fill-opacity="0.1" />
+                <path d="M75 108 L92 125 L130 85" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample Documents Section -->
+        <div class="sample-divider">TRY AN EXAMPLE</div>
+
+        <div class="sample-cards-grid" id="quickSampleChipsContainer">
+          <div class="sample-card-item" data-id="sample_internship_offer">
+            <div class="sample-item-left">
+              <div class="sample-icon-box sample-icon-purple">📄</div>
+              <div>
+                <div class="sample-item-title">Internship Offer Letter</div>
+                <div class="sample-item-subtitle">Training fees & unpaid probation</div>
+              </div>
+            </div>
+            <span class="sample-arrow">➔</span>
           </div>
 
-          <div style="margin: 1rem 0; text-align: center; color: var(--text-muted); font-size: 0.85rem;">— OR PASTE TEXT DIRECTLY —</div>
-
-          <textarea id="pastedText" class="input-text" rows="7" placeholder="Paste the terms, clauses, or text of your contract here..."></textarea>
-
-          <button id="analyzeBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.75rem;">
-            🔍 Analyze Contract Obligations
-          </button>
-        </div>
-
-        <!-- Right: 1-Click Test Samples -->
-        <div class="card">
-          <h2 class="card-title">
-            <span>⚡ 1-Click Evaluation Samples</span>
-            <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Instant Testing</span>
-          </h2>
-          <p class="card-description">Select a realistic student offer letter to inspect the contract analysis engine immediately without uploading:</p>
-
-          <div id="sampleCardsContainer" class="sample-cards">
-            <!-- Rendered by app.js -->
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab 2: Findings & Risk Summary -->
-    <section id="tab-findings" class="tab-content">
-      <!-- Summary Banner -->
-      <div id="riskBanner" class="risk-banner">
-        <div>
-          <h2 style="font-size: 1.2rem; margin-bottom: 0.25rem;">Contract Obligation Assessment</h2>
-          <p id="riskSummaryText" style="color: var(--text-muted); font-size: 0.9rem;">No document analyzed yet.</p>
-        </div>
-        <div id="riskScoreBadge" class="risk-score-badge risk-score-low">
-          Status: Ready
-        </div>
-      </div>
-
-      <!-- Missing Information Alert -->
-      <div id="missingInfoAlert" class="card" style="display: none; border-left: 5px solid #f59e0b; margin-bottom: 1.5rem;">
-        <h3 style="color: #b45309; font-size: 1rem; margin-bottom: 0.5rem;">❓ Unclear / Missing Contract Terms</h3>
-        <ul id="missingInfoList" style="padding-left: 1.25rem; font-size: 0.875rem; color: #78350f;"></ul>
-      </div>
-
-      <!-- Findings List -->
-      <div class="card">
-        <div class="card-title">
-          <span>Identified Obligations & Clauses</span>
-          <div style="display: flex; gap: 0.5rem;">
-            <select id="severityFilter" class="checklist-select">
-              <option value="all">All Severities</option>
-              <option value="high">High Severity Only</option>
-              <option value="medium">Medium Severity Only</option>
-              <option value="low">Low Severity Only</option>
-            </select>
-          </div>
-        </div>
-        <p class="card-description">Every finding is supported by exact textual evidence, severity categorization, and concrete student recommendations.</p>
-
-        <div id="findingsContainer">
-          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Upload a document or pick a sample to view clause findings.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab 3: Action Checklist -->
-    <section id="tab-checklist" class="tab-content">
-      <div class="card">
-        <div class="card-title">
-          <span>Student Action Checklist</span>
-          <button id="addCustomTaskBtn" class="btn btn-secondary btn-sm">+ Add Custom Task</button>
-        </div>
-        <p class="card-description">Step-by-step actionable checklist generated specifically from your contract clauses. Track your negotiation and clarification progress.</p>
-
-        <!-- Progress Bar -->
-        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
-          <span>Progress: <span id="progressPercentageText">0%</span></span>
-          <span><span id="progressRatioText">0 / 0</span> Tasks Completed</span>
-        </div>
-        <div class="progress-bar-container">
-          <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
-        </div>
-
-        <div id="checklistContainer">
-          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No checklist active. Analyze a contract to generate customized tasks.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab 4: Agentic AI & Chatbot -->
-    <section id="tab-agent" class="tab-content">
-      <div class="grid-2-col">
-        <!-- Chatbot Window -->
-        <div class="chat-window">
-          <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); background: #f8fafc; font-weight: 600; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;">
-            <span>💬 Document & Checklist-Aware Chatbot</span>
-            <span style="font-size: 0.75rem; color: #10b981; font-weight: normal;">● Context Connected</span>
+          <div class="sample-card-item" data-id="sample_training_agreement">
+            <div class="sample-item-left">
+              <div class="sample-icon-box sample-icon-orange">📜</div>
+              <div>
+                <div class="sample-item-title">Training Agreement</div>
+                <div class="sample-item-subtitle">2-year bond & exit penalties</div>
+              </div>
+            </div>
+            <span class="sample-arrow">➔</span>
           </div>
 
-          <div id="chatMessages" class="chat-messages">
-            <div class="chat-bubble chat-assistant">
-              👋 Hello! I am your <strong>Student Contract Assistant</strong>. I am directly aware of your currently opened document, obligation findings, and checklist. 
-              <br><br>
-              You can ask me questions about fees, bond periods, notice requirements, or ask me to draft an inquiry email to the HR team.
+          <div class="sample-card-item" data-id="sample_fulltime_offer">
+            <div class="sample-item-left">
+              <div class="sample-icon-box sample-icon-blue">💼</div>
+              <div>
+                <div class="sample-item-title">Full-time Offer Letter</div>
+                <div class="sample-item-subtitle">Standard tech role & notice period</div>
+              </div>
+            </div>
+            <span class="sample-arrow">➔</span>
+          </div>
+
+          <div class="sample-card-item" data-id="sample_nda_contract">
+            <div class="sample-item-left">
+              <div class="sample-icon-box sample-icon-green">🔒</div>
+              <div>
+                <div class="sample-item-title">NDA Sample</div>
+                <div class="sample-item-subtitle">Confidentiality & non-compete</div>
+              </div>
+            </div>
+            <span class="sample-arrow">➔</span>
+          </div>
+        </div>
+
+        <!-- Trust / Value Highlights (3 Columns) -->
+        <div class="feature-highlights-row">
+          <div class="feature-pill-card">
+            <div class="feature-pill-icon icon-purple">🛡️</div>
+            <div>
+              <div class="feature-pill-title">Know Your Rights</div>
+              <div class="feature-pill-desc">AI helps uncover hidden obligations, mandatory bonds, and upfront costs before you sign.</div>
             </div>
           </div>
 
-          <!-- Quick Prompts Chips -->
-          <div class="quick-prompts">
-            <button class="prompt-chip" data-prompt="Check this contract and tell me what I should do.">⚡ Run Agent Goal: What should I do?</button>
-            <button class="prompt-chip" data-prompt="Is there any payment or fee required?">💰 Any payment terms?</button>
-            <button class="prompt-chip" data-prompt="What is the bond duration and penalty?">🔒 Bond & Penalties?</button>
-            <button class="prompt-chip" data-prompt="What is my next priority action?">📌 What is my next task?</button>
-            <button class="prompt-chip" data-prompt="Draft an email to HR asking about the training fee and bond terms.">✉️ Draft HR Email</button>
+          <div class="feature-pill-card">
+            <div class="feature-pill-icon icon-blue">💡</div>
+            <div>
+              <div class="feature-pill-title">Clear Explanations</div>
+              <div class="feature-pill-desc">Complex legal legalese translated into plain, student-friendly English.</div>
+            </div>
           </div>
 
-          <div class="chat-input-row">
-            <input type="text" id="chatInput" class="input-text" placeholder="Ask a question about your contract obligations...">
-            <button id="sendChatBtn" class="btn btn-primary">Send</button>
+          <div class="feature-pill-card">
+            <div class="feature-pill-icon icon-green">✅</div>
+            <div>
+              <div class="feature-pill-title">Actionable Insights</div>
+              <div class="feature-pill-desc">Get practical next steps and email drafts to clarify terms with HR safely.</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: FINDINGS & RISK SUMMARY -->
+      <section id="tab-findings" class="tab-content">
+        <!-- Contract Health Summary Banner -->
+        <div id="riskBanner" class="risk-banner">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+              <span class="badge badge-low" id="docTypeBadge">CONTRACT SUMMARY</span>
+              <span id="docNameText" style="font-weight: 700; font-size: 0.95rem; color: #0f172a;">No document analyzed yet</span>
+            </div>
+            <p id="riskSummaryText" style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
+              Upload a document or choose a sample to see overall contract health, detected obligations, and severity ratings.
+            </p>
+          </div>
+          <div id="riskScoreBadge" class="risk-score-badge risk-score-low">
+            Status: Ready
           </div>
         </div>
 
-        <!-- Agent Workflow & Reasoning Trace -->
-        <div class="card" style="display: flex; flex-direction: column;">
-          <h2 class="card-title">🤖 Action-Oriented Agentic Loop</h2>
-          <p class="card-description">The agent follows a bounded tool-use cycle: <strong>Goal → Understand → Plan → Choose Tool → Execute → Verify → Update Checklist → Next Action</strong>.</p>
+        <!-- Missing Information Alert -->
+        <div id="missingInfoAlert" class="card" style="display: none; border-left: 5px solid #f59e0b; margin-bottom: 1.25rem;">
+          <h3 style="color: #b45309; font-size: 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>❓ Unclear / Missing Contract Terms</span>
+          </h3>
+          <ul id="missingInfoList" style="padding-left: 1.25rem; font-size: 0.875rem; color: #78350f; display: flex; flex-direction: column; gap: 0.35rem;"></ul>
+        </div>
 
-          <div id="agentTraceBox" class="agent-trace-card" style="flex: 1; overflow-y: auto; max-height: 440px;">
-            <div style="color: #94a3b8;">// Agent Execution Trace will appear here when you run an agent workflow</div>
+        <!-- Identified Obligations & Clauses Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>Identified Obligations & Important Clauses</span>
+            <select id="severityFilter" class="checklist-select">
+              <option value="all">All Severities</option>
+              <option value="high">High Risk Only</option>
+              <option value="medium">Review / Moderate Only</option>
+              <option value="low">Clear / Informational Only</option>
+            </select>
+          </div>
+          <p class="card-description">Each finding breaks down the original contract text, what it means in simple terms, and what you should check before signing.</p>
+          
+          <div id="findingsContainer">
+            <div class="empty-state-box">
+              <div class="empty-state-icon">📄</div>
+              <h3>No contract analyzed yet</h3>
+              <p>Upload a contract or select a sample above to view: <br>• Financial obligations & fees <br>• Service bonds & penalties <br>• Notice periods & exit terms</p>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Tab 5: Voice Assistant -->
-    <section id="tab-voice" class="tab-content">
-      <div class="card voice-hero">
-        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎙️ Conversational Voice Assistant</h2>
-        <p class="card-description" style="max-width: 600px; margin: 0 auto 2rem auto;">
-          Speak hands-free with the contract assistant. Equipped with Web Speech recognition and local rule-based fallback when offline.
+      <!-- TAB 3: ACTION CHECKLIST -->
+      <section id="tab-checklist" class="tab-content">
+        <div class="card">
+          <div class="card-title">
+            <span>Student Action Checklist</span>
+            <button id="addCustomTaskBtn" class="btn btn-secondary btn-sm">+ Add Custom Task</button>
+          </div>
+          <p class="card-description">Actionable sequence of steps to protect yourself before signing this document.</p>
+
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">
+            <span>Progress: <span id="progressPercentageText">0%</span></span>
+            <span><span id="progressRatioText">0 / 0</span> Tasks Completed</span>
+          </div>
+
+          <div class="progress-bar-container">
+            <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+
+          <div id="checklistContainer">
+            <div class="empty-state-box">
+              <div class="empty-state-icon">✅</div>
+              <h3>Checklist is Empty</h3>
+              <p>Upload a document to generate your personalized step-by-step action checklist.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: AI ASSISTANT & CHAT & TRACE -->
+      <section id="tab-agent" class="tab-content">
+        <div class="grid-2-col">
+          <!-- Chatbot Window -->
+          <div class="chat-window">
+            <div class="chat-header-bar">
+              <div>
+                <div style="font-weight: 700; font-size: 1rem; color: #0f172a;">Ask about this contract</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Get instant answers based on the document you analyzed.</div>
+              </div>
+              <span class="badge badge-low">AI ACTIVE</span>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+              <div class="chat-bubble chat-assistant">
+                👋 <strong>Hello!</strong> I have parsed your document. Ask me anything—such as "Are there training fees?", "What is the bond penalty?", or "Draft an email to HR asking for clarification."
+              </div>
+            </div>
+
+            <!-- Quick Suggested Questions -->
+            <div class="quick-prompts">
+              <button class="prompt-chip" data-prompt="Check this contract and tell me what I should do.">⚡ What should I do?</button>
+              <button class="prompt-chip" data-prompt="Is there any payment or fee required?">💰 Any payment terms?</button>
+              <button class="prompt-chip" data-prompt="What is the bond duration and penalty?">🔒 Bond & Penalties?</button>
+              <button class="prompt-chip" data-prompt="Draft an email to HR asking about the training fee and bond terms.">✉️ Draft HR Email</button>
+            </div>
+
+            <div class="chat-input-row">
+              <input type="text" id="chatInput" class="input-text" placeholder="Ask a question about your contract obligations...">
+              <button id="sendChatBtn" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+
+          <!-- Analysis Trace / Checked Log -->
+          <div class="card">
+            <div class="card-title">
+              <span>What the AI Checked</span>
+              <span class="tab-badge">Trace Log</span>
+            </div>
+            <p class="card-description">High-level user-safe verification sequence completed by the assistant.</p>
+
+            <div id="agentTraceBox" class="agent-trace-card" style="max-height: 440px; overflow-y: auto;">
+              <div style="color: #64748b; font-size: 0.85rem; padding: 0.5rem;">
+                ✓ Ready for document processing.<br>
+                ✓ Obligation detection engine active.<br>
+                ✓ Verification service standby.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: VOICE ASSISTANT -->
+      <section id="tab-voice" class="tab-content">
+        <div class="card voice-hero">
+          <h2 style="font-size: 1.35rem; margin-bottom: 0.35rem;">🎙️ Voice Assistant</h2>
+          <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Speak naturally to ask questions about your contract or government services.</p>
+
+          <button id="voiceMicBtn" class="mic-circle-btn">🎤</button>
+          <div id="voiceStatusText" style="margin-top: 1.25rem; font-weight: 600; font-size: 0.95rem; color: #334155;">Click the microphone and speak your query</div>
+          <div id="voiceTranscriptLog" style="margin-top: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 12px; text-align: left; border: 1px solid var(--border-color); min-height: 80px;"></div>
+        </div>
+      </section>
+
+      <!-- TAB 6: ENTITY VERIFICATION -->
+      <section id="tab-verification" class="tab-content">
+        <div class="card">
+          <h2 class="card-title">🏛️ Corporate Entity Verification</h2>
+          <p class="card-description">Cross-checks company registration details against MCA / ROC public records.</p>
+          <div id="verificationContent">
+            <div class="empty-state-box">
+              <div class="empty-state-icon">🏛️</div>
+              <h3>No Entity Verified Yet</h3>
+              <p>Upload a document to automatically verify corporate registration records.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SECTION B: SECONDARY GOVERNMENT PROCESS AUTOMATION VIEW -->
+    <!-- ======================================================== -->
+    <div id="govViewContainer" class="gov-view-container" style="display: none;">
+
+      <!-- Government Hero Banner -->
+      <section id="govLandingHero" class="landing-hero">
+        <span class="landing-hero-badge">⚡ Secondary Mode: Action-Oriented Automation Agent</span>
+        <h2 class="landing-hero-title">What government process are you completing?</h2>
+        <p class="landing-hero-subtitle">
+          Describe any government service, 7/12 land extract, license renewal, or certificate in plain English. The AI agent discovers official verified portals, maps forms, and guides you step-by-step.
         </p>
 
-        <button id="voiceMicBtn" class="mic-circle-btn" title="Click to Start Speaking">
-          🎤
-        </button>
-
-        <div id="voiceStatusText" style="margin-top: 1.5rem; font-weight: 600; font-size: 1rem; color: #475569;">
-          Click the microphone and speak your query
+        <div class="goal-input-box">
+          <button type="button" class="btn-goal-mic" id="goalMicBtn" title="Speak your goal">🎙️</button>
+          <input type="text" id="goalInputField" class="goal-input-field" placeholder="e.g. I want to apply for a 7/12 land record in Maharashtra, or renew my driving license...">
+          <button type="button" class="btn-goal-start" id="startGoalBtn">Start Guidance ➔</button>
         </div>
 
-        <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
-          <button class="prompt-chip voice-command-chip" data-command="What are my obligations?">"What are my obligations?"</button>
-          <button class="prompt-chip voice-command-chip" data-command="Is there any training fee?">"Is there any training fee?"</button>
-          <button class="prompt-chip voice-command-chip" data-command="What is my next task?">"What is my next task?"</button>
-          <button class="prompt-chip voice-command-chip" data-command="Explain the service bond.">"Explain the service bond."</button>
+        <div class="landing-chips-row">
+          <button class="landing-prompt-chip" data-goal="I want to apply for a 7/12 land record extract in Maharashtra">📜 Land Records (7/12 Extract)</button>
+          <button class="landing-prompt-chip" data-goal="I need to renew my driving license online">🚗 Driving License Renewal</button>
+          <button class="landing-prompt-chip" data-goal="I want to register an MSME business on Udyam">🏢 Register a Business (MSME)</button>
+          <button class="landing-prompt-chip" data-goal="I need an Income and Domicile Certificate on Aaple Sarkar">🏛️ Income / Domicile Certificate</button>
+          <button class="landing-prompt-chip" data-goal="I don't know what documents I need for land registration">❓ Document Requirements Discovery</button>
+        </div>
+      </section>
+
+      <!-- Active Process Header Banner -->
+      <div id="govProcessHeaderBanner" class="process-header-banner" style="display: none;">
+        <div>
+          <span class="badge badge-low" id="govCategoryBadge">GOVERNMENT SERVICE</span>
+          <h2 style="font-size: 1.3rem; margin: 0.35rem 0 0.15rem 0;" id="govProcessTitle">Process Title</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;" id="govDepartmentText">Department details</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Official Fee</div>
+          <div style="font-weight: 700; font-size: 1.1rem; color: #0284c7;" id="govFeeText">Rs. 0</div>
+        </div>
+      </div>
+
+      <!-- Clarification Banner -->
+      <div id="govClarificationCard" class="card" style="display: none; border-left: 5px solid #f59e0b; margin-bottom: 1.5rem;">
+        <h3 style="color: #b45309; font-size: 1.05rem; margin-bottom: 0.5rem;">💬 Quick Clarification Needed</h3>
+        <p id="govClarificationQuestion" style="font-size: 0.9rem; margin-bottom: 1rem;"></p>
+        <div id="govClarificationOptions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+      </div>
+
+      <!-- Main Gov Grid -->
+      <div class="grid-2-col" id="govMainGrid" style="display: none;">
+        <!-- Left Column -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="card">
+            <h3 class="card-title">
+              <span>🏛️ Verified Official Government Portal</span>
+              <span class="badge badge-low" id="govFreshnessBadge">Verified</span>
+            </h3>
+            <p class="card-description">Strictly using verified official government domains (.gov.in / .nic.in). Never unofficial sites.</p>
+
+            <div class="verified-portal-card">
+              <div>
+                <strong id="govPortalName">Official Government Portal</strong><br>
+                <span style="font-size: 0.8rem; color: #166534;" id="govPortalDomain">domain.gov.in</span>
+              </div>
+              <a href="#" target="_blank" id="govPortalLinkBtn" class="portal-link-btn">
+                <span>Open Portal ↗</span>
+              </a>
+            </div>
+            <div style="font-size: 0.775rem; color: var(--text-muted);" id="govPurposeText"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>📄 Document Intelligence & Requirements</span>
+              <span class="tab-badge" id="govDocCountBadge">0</span>
+            </div>
+            <p class="card-description">Real-time matching against your uploaded documents vs official government prerequisites.</p>
+            <div id="govRequiredDocsContainer"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>✅ Government Action Checklist</span>
+              <span id="govChecklistProgressText" style="font-size: 0.85rem; color: #0284c7;">0% Completed</span>
+            </div>
+            <p class="card-description">Actionable sequence of tasks from preparation through digital receipt download.</p>
+            <div id="govChecklistContainer"></div>
+          </div>
+
+          <div class="form-sandbox-card">
+            <div class="card-title">
+              <span>📝 Form Assistant & Safe Field Mapping</span>
+              <button class="btn btn-secondary btn-sm" id="govValidateBtn">✔ Validate Fields</button>
+            </div>
+            <p class="card-description">Pre-fills verified fields from profile data while flagging missing entries.</p>
+            <div id="govFormFieldsContainer"></div>
+
+            <button id="govLaunchReviewBtn" class="btn-analyze-large" style="margin-top: 1.25rem; background: linear-gradient(135deg, #0284c7, #0369a1);">
+              <span>Review Before Submission 🔍</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Voice Live Transcript Box -->
-        <div style="margin-top: 2rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; text-align: left;">
-          <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Voice Interaction Log:</div>
-          <div id="voiceTranscriptLog" style="font-size: 0.9rem; color: #1e293b; min-height: 50px;">
-            (Voice transcript and verbal replies will appear here)
+        <!-- Right Column -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem;">🎙️ Voice Step-by-Step Guide</h3>
+            <p class="card-description">The AI guides you through one requirement and form field at a time.</p>
+
+            <button id="govVoiceMicBtn" class="mic-circle-btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); width: 85px; height: 85px; font-size: 2.25rem; margin: 0.5rem auto;">
+              🎤
+            </button>
+
+            <div id="govVoiceStatusText" style="margin-top: 1rem; font-weight: 600; font-size: 0.9rem; color: #334155;">
+              Click microphone and say "What do I need?" or "Guide me"
+            </div>
+
+            <div style="margin-top: 1rem; display: flex; justify-content: center; gap: 0.4rem; flex-wrap: wrap;">
+              <button class="prompt-chip gov-voice-chip" data-query="What do I need for this?">"What documents do I need?"</button>
+              <button class="prompt-chip gov-voice-chip" data-query="Yes I have it ready">"Yes, I have it"</button>
+              <button class="prompt-chip gov-voice-chip" data-query="What is the official fee?">"What is the fee?"</button>
+              <button class="prompt-chip gov-voice-chip" data-query="Guide me to the next step">"Guide me step by step"</button>
+            </div>
+
+            <div style="margin-top: 1.5rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem; text-align: left; max-height: 180px; overflow-y: auto;">
+              <div style="font-weight: 600; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">Voice Dialogue:</div>
+              <div id="govVoiceLog" style="font-size: 0.85rem; color: #0f172a;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">📜 Automation Audit Timeline</h3>
+            <p class="card-description">Transparent history of all agent reasoning, document matches, and user approvals.</p>
+            <div id="govTimelineBox" class="timeline-card">
+              <div style="color: #64748b;">// Audit events will log here</div>
+            </div>
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- Tab 6: Entity Verification -->
-    <section id="tab-verification" class="tab-content">
-      <div class="card">
-        <h2 class="card-title">🏛️ Corporate Entity Verification</h2>
-        <p class="card-description">
-          Cross-checking company registration details against official records.
-        </p>
-
-        <div id="verificationContent">
-          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Upload or select a contract to see entity verification records.</p>
-        </div>
-      </div>
-    </section>
+    </div>
 
   </main>
 
-  <!-- Add Task Modal -->
+  <!-- ======================================================== -->
+  <!-- MODAL: GOV HUMAN-IN-THE-LOOP REVIEW -->
+  <!-- ======================================================== -->
+  <div id="govReviewModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 0.35rem; color: #0f172a;">🛡️ Review Application Before Submission</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Human-in-the-Loop Safeguard: Verify details before initiating processing.
+      </p>
+
+      <div id="govReviewFieldsList" style="max-height: 240px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem;"></div>
+
+      <div class="safety-warning-banner">
+        <span>⚠️</span>
+        <div>
+          <strong>Explicit Human Confirmation Required:</strong><br>
+          You authorize the assistant to register this application on the official state gateway.
+        </div>
+      </div>
+
+      <div style="margin: 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" id="govConsentCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="govConsentCheckbox" style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+          I have reviewed the above information and confirm its accuracy.
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button id="cancelGovReviewBtn" class="btn btn-secondary">Edit / Cancel</button>
+        <button id="confirmGovSubmissionBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);" disabled>
+          Confirm & Save Reference Number
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CUSTOM CHECKLIST TASK -->
   <div id="addTaskModal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-bottom: 1rem;">Add Custom Checklist Task</h3>
-      <div style="margin-bottom: 1rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Task Title</label>
-        <input type="text" id="customTaskTitle" class="input-text" placeholder="e.g. Inquire about college exam leaves">
-      </div>
-      <div style="margin-bottom: 1rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Description</label>
-        <textarea id="customTaskDesc" class="input-text" rows="3" placeholder="Details or questions you want to ask..."></textarea>
-      </div>
-      <div style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Priority</label>
-        <select id="customTaskPriority" class="input-text">
-          <option value="High">High</option>
-          <option value="Medium" selected>Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </div>
+      <h3 style="margin-bottom: 1rem; color: #0f172a;">Add Custom Checklist Task</h3>
+      <input type="text" id="customTaskTitle" class="input-text" placeholder="Task Title" style="margin-bottom: 0.75rem;">
+      <textarea id="customTaskDesc" class="input-text" rows="3" placeholder="Description / Details" style="margin-bottom: 0.75rem;"></textarea>
+      <select id="customTaskPriority" class="input-text" style="margin-bottom: 1rem;">
+        <option value="High">High Priority</option>
+        <option value="Medium" selected>Medium Priority</option>
+        <option value="Low">Low Priority</option>
+      </select>
       <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
         <button id="cancelAddTaskBtn" class="btn btn-secondary">Cancel</button>
         <button id="saveCustomTaskBtn" class="btn btn-primary">Save Task</button>
@@ -282,14 +619,12 @@
     </div>
   </div>
 
-  <!-- Share Link Modal -->
+  <!-- MODAL: SHARE LINK -->
   <div id="shareModal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-bottom: 0.5rem;">🔗 Share Your Analysis & Checklist</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-        Share this secure link with your mentor, college placement coordinator, or team member.
-      </p>
-      <input type="text" id="shareUrlInput" class="input-text" readonly style="margin-bottom: 1rem; background: #f8fafc;">
+      <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🔗 Share Your Analysis & Checklist</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Copy this link to share your contract analysis with a mentor or peer.</p>
+      <input type="text" id="shareUrlInput" class="input-text" readonly style="margin-bottom: 1rem;">
       <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
         <button id="closeShareModalBtn" class="btn btn-secondary">Close</button>
         <button id="copyShareUrlBtn" class="btn btn-primary">📋 Copy Link</button>
@@ -299,7 +634,7 @@
 
   <!-- Footer -->
   <footer class="app-footer">
-    <p>🛡️ AI Student Contract Transparency Assistant • Strictly objective clause analysis with zero scam labeling • Not legal advice</p>
+    <p>🛡️ <strong>Student Contract Transparency Assistant</strong> • Protecting Students from Hidden Obligations & Contractual Risks</p>
   </footer>
 
   <script src="app.js"></script>

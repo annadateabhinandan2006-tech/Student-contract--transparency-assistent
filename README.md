@@ -1,136 +1,149 @@
-# AI Student Contract Transparency & Obligation Assistant (MVP Prototype)
+# Student Contract Transparency Assistant
 
-🛡️ **Protecting Students from Hidden Obligations**
-
-**Priority:** Primary: cloud LLM for accuracy, offline mode: reduced-capability fallback when no network
-
----
-
-## Project Overview
-The **AI Student Contract Transparency & Action Assistant** empowers students to detect, understand, and act upon potentially important or unclear financial and contractual obligations before accepting an internship, training opportunity, job offer, or similar agreement.
-
-> [!IMPORTANT]
-> **Zero-Scam-Labeling Policy**: The system is NOT a "scam detector". Every finding is presented purely as:
-> `Potential Issue + Evidence + Explanation + Recommended Student Action`
-> The system never labels a company or contract as "fraud" or "scam" solely from AI output.
+**Problem Statement:** Protecting Students from Hidden Obligations  
+**Tagline:** Understand Every Clause. Protect Your Future.
 
 ---
 
-## Core User Flow
+## 🎯 Problem
+Students and fresh graduates frequently sign internship, training, employment, and non-disclosure agreements without realizing they contain:
+- Upfront registration or "training" fees.
+- Onerous 1-to-2 year service bonds and lock-in periods.
+- Exorbitant financial exit penalties or stipend clawbacks.
+- Withholding of original academic certificates.
+- Ambiguous working hours, unpaid probation, or missing exam leave policies.
+
+---
+
+## 💡 Solution
+The **Student Contract Transparency Assistant** is a legal-tech AI platform designed to analyze student contracts before they commit. It provides:
+1. **Instant Obligation & Risk Analysis**: Identifies financial charges, service bonds, notice periods, and early exit penalties.
+2. **Plain English Clause Translations**: Translates dense legal text into clear, student-friendly explanations side-by-side with the original clause.
+3. **Actionable Checklist**: Automatically generates a prioritized step-by-step action plan to verify terms and communicate safely with HR.
+4. **Corporate Entity Verification**: Cross-references company names and CINs against simulated Ministry of Corporate Affairs (MCA) and Registrar of Companies (ROC) databases.
+5. **Contract-Aware AI Chatbot & Voice Assistant**: Answers document-specific questions and drafts clarification emails to recruiters.
+6. **Secondary Mode — Government Process Agent**: Action-oriented assistant for discovering official government portals, mapping forms, and tracking application reference numbers.
+
+---
+
+## ✨ Key Features
+- 📄 **Multi-Format Document Upload**: Supports PDF, DOCX, TXT, and direct text paste.
+- ⚡ **1-Click Sample Evaluation**: Try pre-loaded offer letters and training agreements.
+- 🔍 **Severity-Based Filtering**: View High Risk, Moderate Review, and Clear/Informational findings.
+- ✅ **Custom Action Checklist**: Add custom tasks, track completion percentage, and manage progress.
+- 📥 **Export Report**: Download full analysis summaries as clean Markdown files (`.md`).
+- 🔗 **Shareable Link State**: Save analysis state and generate instant share links.
+- 🎙️ **Voice Guidance**: Conversational voice queries using SpeechRecognition and SpeechSynthesis.
+
+---
+
+## 🏗️ Architecture & Data Flow
+
 ```
-Student
-  ↓
-Upload Contract / Select Realistic Sample
-  ↓
-Extract Text (PDF / TXT / DOCX)
-  ↓
-AI Contract Analysis (Obligation Rules & LLM Engine)
-  ↓
-Identify Important Clauses (Financial, Bonds, Penalties, Notice, Compensation)
-  ↓
-Evidence + Page/Section Mapping
-  ↓
-Student-Friendly Risk Summary
-  ↓
-Action Checklist (Pending / In Progress / Completed / Blocked)
-  ↓
-Document & Checklist-Aware Chatbot
-  ↓
-Voice Assistant (Web Speech + Offline Fallback)
-  ↓
-Save / Share Link & Export Report
+[ User Browser / Web UI ]
+       │
+       ▼ (HTTP / REST API)
+[ Node.js + Express Server ] ── (Port 3000)
+       │
+       ├─► [ Contract Analyzer Engine ] ──► Rule-based NLP & Evidence Extraction
+       ├─► [ Corporate Verifier ] ────────► MCA / ROC Public Record Lookup
+       ├─► [ Action Agent Engine ] ───────► Contract-Aware Chatbot & Tool Runner
+       └─► [ Gov Agent Engine ] ──────────► Portal Discovery & Form Assistant
 ```
 
 ---
 
-## Features
-
-1. **Structured Contract Analysis**:
-   - Training, registration, and certification fees (amounts & payment timing)
-   - Mandatory service bonds & lock-in periods
-   - Liquidated damages & early exit penalties
-   - Security deposits & original certificate withholding
-   - Performance-conditional stipends & unpaid probations
-   - Notice period requirements
-   - Missing or unclear terms detection (stipend amount, exam leave, refund policy)
-
-2. **Action-Oriented Agentic AI**:
-   - `Goal → Understand → Plan → Choose Tool → Execute → Verify → Update Checklist → Next Action`
-   - Tools: `analyze_document`, `detect_payment_terms`, `detect_penalties`, `detect_bond_terms`, `detect_notice_period`, `detect_missing_information`, `create_checklist`, `update_checklist`, `get_next_pending_task`, `generate_student_questions`, `draft_inquiry_email`.
-
-3. **Interactive Action Checklist**:
-   - Auto-generated tasks mapped to detected clauses
-   - Progress bar with percentage and task counters
-   - Status tracking (`Pending`, `In Progress`, `Completed`, `Blocked`)
-   - Add custom tasks
-   - Direct link to draft emails to HR
-
-4. **Context-Aware Chatbot**:
-   - Knows the open document, analysis findings, and checklist state
-   - Instant quick-prompt chips (*"Is there any payment?", "What is the bond duration?", "What should I do?"*)
-
-5. **Conversational Voice Assistant**:
-   - Speech-to-Text via Web Speech API with microphone visualizer
-   - SpeechSynthesis text-to-speech spoken feedback
-   - Local fallback query handling when offline or disconnected
-
-6. **Save & Team Sharing**:
-   - Instant shareable link generator (`/share/:id`)
-   - Persistent checklist state
-   - 1-click Markdown obligation report export
-
-7. **1-Click Realistic Evaluation Samples**:
-   - **Sample 1**: EdTech Trainee Internship (Hidden ₹25,000 fee, 24-month bond, 3-month notice)
-   - **Sample 2**: IT Trainee Agreement (6-month unpaid probation, ₹15,000 hardware deposit)
-   - **Sample 3**: Standard Tech Internship Offer (Clean terms, transparent stipend, 15-day notice)
+## 🛠️ Technology Stack
+- **Frontend**: Standard Vanilla HTML5, CSS3 (Modern SaaS Tokens), JavaScript (ES6+), Web Speech API.
+- **Backend Framework**: Node.js, Express.js.
+- **Document Processing**: `pdf-parse` (PDF extraction), Multer (memory storage file uploads).
+- **Environment Management**: `dotenv`.
+- **Testing**: Built-in Node test suite (`tests/analyzer.test.js`, `tests/integration.test.js`, `tests/govAgent.test.js`).
 
 ---
 
-## Running the Application
+## 💾 Database & Persistence
+- **State Store**: In-memory Map datastore (`savedChecklists`) for session records, checklist items, and reference numbers.
+- **Production Persistence**: Can be backed by MongoDB, PostgreSQL, or Redis without altering the REST API interface.
 
-### 1. Install Dependencies
+---
+
+## 🤖 AI / LLM Integration
+- **Engine**: Rule-based natural language processing engine (`contractAnalyzer.js`) with pattern matching, amount extraction, timing extraction, and negation filtering.
+- **Zero Scam-Labeling Guarantee**: Strict objective evidence rating policy that avoids calling agreements "scams" or "frauds".
+
+---
+
+## 🚀 Local Setup & Installation
+
+### Prerequisites
+- Node.js (v16.0.0 or higher)
+- npm (v7.0.0 or higher)
+
+### Setup Steps
 ```bash
+# 1. Clone the repository
+git clone https://github.com/annadateabhinandan2006-tech/Student-contract--transparency-assistent.git
+cd Student-contract--transparency-assistent
+
+# 2. Install dependencies
 npm install
+
+# 3. Create environment configuration
+cp .env.example .env
+
+# 4. Start development server
+npm run dev
 ```
 
-### 2. Run Automated Tests
+The application will be accessible at `http://localhost:3000`.
+
+---
+
+## ⚙️ Environment Variables (`.env`)
+```env
+PORT=3000
+NODE_ENV=production
+```
+
+---
+
+## 🧪 Testing
+Run the comprehensive automated test suite:
 ```bash
 npm test
 ```
 
-### 3. Start the Server
+Test coverage includes:
+- Contract obligation detection & severity scoring.
+- PDF parsing and document extraction.
+- Chatbot context responsiveness.
+- Corporate entity verification.
+- Save, Share, and Export report APIs.
+- Government Process Agent workflow & reference number generation.
+
+---
+
+## 📦 Production Build & Deployment
+
+### Run Production Server
 ```bash
 npm start
 ```
-Open **`http://localhost:3000`** in your browser.
+
+### Deployment Platforms
+The project is containerization-ready and can be deployed directly to:
+- **Vercel / Render / Railway / Heroku**: Set `PORT` environment variable and run `npm start`.
+- **AWS Elastic Beanstalk / GCP App Engine**: Node.js runtime deployment.
 
 ---
 
-## Architecture & Code Structure
-```
-/
-├── server/
-│   ├── index.js                  # Main Express Server & Static Host
-│   ├── routes/
-│   │   └── api.js                # API endpoints (analyze, agent, chat, checklist, health)
-│   ├── agent/
-│   │   ├── contractAnalyzer.js   # Clause detection & evidence extractor
-│   │   ├── agentEngine.js        # Action-oriented agent workflow & tools
-│   │   └── companyVerifier.js    # Primary entity verification & disclaimers
-│   └── data/
-│       └── samples.js            # Preloaded realistic student contract samples
-├── public/
-│   ├── index.html                # Responsive single-page application UI
-│   ├── styles.css                # Accessible modern design & badges
-│   └── app.js                    # Client controller, Web Speech API, Voice & Chat
-├── tests/
-│   ├── analyzer.test.js          # Unit tests (clause rules, no-scam policy, checklist)
-│   └── integration.test.js       # E2E API tests (health, analysis, agent, share)
-└── package.json
-```
+## ⚠️ Known Limitations
+- Automatic company verification relies on MCA public record simulation for local offline performance; live API keys are required for real-time MCA gateway queries.
+- Voice recognition relies on Web Speech API (`SpeechRecognition`), which requires browser permission and HTTPS in production.
 
 ---
 
-## Known Disclaimers & Nuances
-- AI contract analysis is designed for student education and awareness, not legal advice.
-- Official company registration verifies legal existence only, not commercial contract fairness.
+## 🔗 Repository & Live Demo
+- **GitHub Repository**: [Student-contract--transparency-assistent](https://github.com/annadateabhinandan2006-tech/Student-contract--transparency-assistent)
+- **Git Branch**: `release/hackathon-final`
