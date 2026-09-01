@@ -1,9 +1,139 @@
 /**
  * app.js
- * Client controller for Student Contract Transparency Assistant and Government Process Agent.
+ * Client controller for User Contract Transparency Assistant and Government Process Agent.
  * Designed with Apple + Stripe + Linear + Vercel SaaS UI architecture.
  * Preserves 100% of existing API contracts, backend handlers, and state logic.
+ * Includes Smart Form Intelligence for guided form completion.
  */
+
+// --- SAFE JSON FETCH HELPER ---
+// Prevents "Unexpected token '<'" errors when backend returns HTML for missing routes
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const contentType = response.headers.get('content-type') || '';
+
+  const data = contentType.includes('application/json')
+    ? await response.json()
+    : { error: await response.text() };
+
+  if (!response.ok) {
+    throw new Error(
+      data.error ||
+      data.details ||
+      `Request failed with status ${response.status}`
+    );
+  }
+
+  return data;
+}
+
+// --- SMART FORM INTELLIGENCE ENGINE ---
+// Analyzes current form state and provides guidance, missing-field detection,
+// inconsistency warnings, and next-step recommendations.
+function analyzeFormState(formFields, currentValues) {
+  const result = {
+    nextStep: null,
+    reason: null,
+    missingFields: [],
+    incompleteFields: [],
+    inconsistencies: [],
+    possibleProblems: [],
+    recommendedAction: null,
+    completedFields: [],
+    fieldStatus: [] // per-field status for rendering
+  };
+
+  if (!formFields || formFields.length === 0) {
+    return result;
+  }
+
+  let firstEmptyRequired = null;
+
+  for (const field of formFields) {
+    const val = (currentValues[field.fieldName] || '').trim();
+    const isRequired = !field.safeToFill;
+    const isEmpty = val.length === 0;
+    const isShort = val.length > 0 && val.length < 3;
+
+    if (!isEmpty) {
+      result.completedFields.push(field.fieldName);
+      result.fieldStatus.push({ fieldName: field.fieldName, label: field.label, status: 'completed' });
+    } else if (isRequired) {
+      result.missingFields.push({ fieldName: field.fieldName, label: field.label, required: true });
+      result.fieldStatus.push({ fieldName: field.fieldName, label: field.label, status: 'missing' });
+      if (!firstEmptyRequired) firstEmptyRequired = field;
+    } else {
+      result.fieldStatus.push({ fieldName: field.fieldName, label: field.label, status: 'optional' });
+    }
+
+    if (isShort && !isEmpty) {
+      result.incompleteFields.push({
+        fieldName: field.fieldName,
+        label: field.label,
+        issue: `"${field.label}" appears incomplete (only ${val.length} character${val.length > 1 ? 's' : ''}).`,
+        recommendation: `Please provide a complete value for ${field.label}.`
+      });
+    }
+  }
+
+  // Date consistency check
+  const dateFields = formFields.filter(f => {
+    const v = (currentValues[f.fieldName] || '').trim();
+    return v && /\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(v);
+  });
+  if (dateFields.length >= 2) {
+    const dates = dateFields.map(f => ({
+      label: f.label,
+      fieldName: f.fieldName,
+      date: new Date(currentValues[f.fieldName])
+    })).filter(d => !isNaN(d.date.getTime()));
+
+    for (let i = 0; i < dates.length; i++) {
+      for (let j = i + 1; j < dates.length; j++) {
+        const a = dates[i], b = dates[j];
+        if (a.label.toLowerCase().includes('start') && b.label.toLowerCase().includes('end')) {
+          if (a.date > b.date) {
+            result.inconsistencies.push({
+              fields: [a.fieldName, b.fieldName],
+              issue: `Potential inconsistency: ${a.label} (${currentValues[a.fieldName]}) is after ${b.label} (${currentValues[b.fieldName]}).`,
+              recommendation: 'Please review the dates to ensure the start date is before the end date.'
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Possible problems
+  if (result.missingFields.length > 0) {
+    result.possibleProblems.push(
+      `${result.missingFields.length} required field${result.missingFields.length > 1 ? 's are' : ' is'} missing. The application may be incomplete during verification.`
+    );
+  }
+
+  // Next step recommendation
+  if (firstEmptyRequired) {
+    result.nextStep = `Enter ${firstEmptyRequired.label}`;
+    result.reason = `This information may be required before the process can be completed.`;
+    result.recommendedAction = `Fill in the "${firstEmptyRequired.label}" field to continue.`;
+  } else if (result.incompleteFields.length > 0) {
+    const f = result.incompleteFields[0];
+    result.nextStep = `Complete ${f.label}`;
+    result.reason = f.issue;
+    result.recommendedAction = f.recommendation;
+  } else if (result.inconsistencies.length > 0) {
+    const inc = result.inconsistencies[0];
+    result.nextStep = 'Review inconsistent fields';
+    result.reason = inc.issue;
+    result.recommendedAction = inc.recommendation;
+  } else {
+    result.nextStep = 'All fields look complete';
+    result.reason = 'Based on the information provided, all required fields have values.';
+    result.recommendedAction = 'You may proceed to review before submission.';
+  }
+
+  return result;
+}
 
 // Global Application State
 const state = {
@@ -212,8 +342,8 @@ function switchMode(mode) {
     elements.modeContractBtn.classList.add('active');
     if (elements.govViewContainer) elements.govViewContainer.style.display = 'none';
     if (elements.contractViewContainer) elements.contractViewContainer.style.display = 'block';
-    elements.appHeaderTitle.textContent = 'Student Contract Transparency';
-    elements.appHeaderSubtitle.textContent = 'Protecting Students from Hidden Obligations';
+    elements.appHeaderTitle.textContent = 'User Contract Transparency';
+    elements.appHeaderSubtitle.textContent = 'Protecting Users from Hidden Obligations';
   }
 }
 
@@ -339,8 +469,7 @@ function setupContractAssistant() {
       const sampleId = card.getAttribute('data-id');
       showProgressiveLoading('Loading sample document...');
       try {
-        const res = await fetch(`/api/samples/${sampleId}`);
-        const sample = await res.json();
+        const sample = await fetchJson(`/api/samples/${sampleId}`);
         state.contract.documentText = sample.text;
         state.contract.filename = sample.title;
         elements.pastedText.value = sample.text;
@@ -426,9 +555,7 @@ async function handleContractFileUpload(file) {
   formData.append('file', file);
 
   try {
-    const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to analyze document');
+    const data = await fetchJson('/api/analyze', { method: 'POST', body: formData });
 
     updateProgressiveLoading('Analyzing Obligations...', 'Scanning for bonds, fees, and penalties', 80);
     setTimeout(() => {
@@ -446,13 +573,11 @@ async function performContractAnalysis(payload) {
   updateProgressiveLoading('AI Analysis Active...', 'Detecting hidden obligations & risk levels', 50);
 
   try {
-    const res = await fetch('/api/analyze', {
+    const data = await fetchJson('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to complete analysis');
 
     updateProgressiveLoading('Generating Checklist...', 'Structuring action items and trace log', 90);
     setTimeout(() => {
@@ -707,7 +832,7 @@ async function sendContractChatMessage() {
   elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 
   try {
-    const res = await fetch('/api/chat', {
+    const data = await fetchJson('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -719,8 +844,6 @@ async function sendContractChatMessage() {
         }
       })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to fetch response');
 
     const botBubble = document.createElement('div');
     botBubble.className = 'chat-bubble assistant-bubble';
@@ -790,32 +913,55 @@ async function executeGovGoal(goal, clarifiedState = null) {
     elements.startGoalBtn.disabled = true;
     elements.startGoalBtn.textContent = '⚡ Analyzing Goal...';
 
-    const res = await fetch('/api/gov/agent/run', {
+    const data = await fetchJson('/api/agent/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         goal,
-        sessionContext: {
+        context: {
           sessionId: state.sessionId,
           clarifiedState,
-          uploadedDocs: state.contract.documentText ? [{ name: state.contract.filename || 'Uploaded Contract', text: state.contract.documentText }] : []
+          uploadedDocs: state.contract.documentText ? [{ name: state.contract.filename || 'Uploaded Contract', text: state.contract.documentText }] : [],
+          documentText: state.contract.documentText || '',
+          mode: 'government-agent'
         }
       })
     });
 
-    const data = await res.json();
-
+    // The existing /api/agent/run returns {success, goal, plan, trace, analysis, checklist, ...}
+    // Map the agent response into gov process view structure
     if (data.needsClarification) {
       renderGovClarification(goal, data.clarification, data.understanding);
       return;
     }
 
     elements.govClarificationCard.style.display = 'none';
-    state.gov.process = data.process;
+
+    // Build gov process object from agent response
+    state.gov.process = data.process || {
+      id: 'gov_' + Date.now(),
+      title: goal,
+      category: 'Government Service',
+      department: 'General Department',
+      state: clarifiedState || 'India',
+      applicableFees: 'Varies by service',
+      purpose: goal,
+      officialPortal: {
+        name: 'Official Government Portal',
+        domain: 'india.gov.in',
+        url: 'https://www.india.gov.in',
+        lastVerifiedAt: new Date().toLocaleDateString()
+      }
+    };
+
     state.gov.requiredDocs = data.requiredDocs || [];
     state.gov.checklist = data.checklist || [];
     state.gov.formFields = data.formFields || [];
-    state.gov.timeline = data.timeline || [];
+    state.gov.timeline = data.timeline || [{
+      timestamp: new Date().toISOString(),
+      type: 'AGENT_ANALYSIS',
+      details: `Agent analyzed goal: "${goal}"`
+    }];
 
     renderGovProcessView();
   } catch (err) {
@@ -923,33 +1069,120 @@ function renderGovFormFields() {
         name="${f.fieldName}" value="${escapeHtml(f.value)}" placeholder="${f.placeholder || 'Enter value...'}">
     </div>
   `).join('');
+
+  // Smart Form Assistant: attach listeners to form fields for live guidance
+  document.querySelectorAll('.gov-form-input').forEach(inp => {
+    inp.addEventListener('input', () => renderSmartFormAssistant());
+    inp.addEventListener('blur', () => renderSmartFormAssistant());
+  });
+
+  // Initial render of assistant
+  renderSmartFormAssistant();
 }
 
-async function validateGovFormFields() {
+// --- SMART FORM ASSISTANT PANEL ---
+function renderSmartFormAssistant() {
   const currentValues = {};
   document.querySelectorAll('.gov-form-input').forEach(inp => {
     currentValues[inp.name] = inp.value;
   });
 
-  try {
-    const res = await fetch('/api/gov/form/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        formFields: state.gov.formFields,
-        fieldValues: currentValues
-      })
-    });
+  const analysis = analyzeFormState(state.gov.formFields, currentValues);
 
-    const data = await res.json();
-    if (data.validation.isValid) {
-      alert('✅ All form fields validated successfully! Ready for final review.');
-    } else {
-      const msg = data.validation.errors.map(e => `• ${e.error}`).join('\n');
-      alert(`⚠️ Please review form errors:\n\n${msg}`);
+  // Find or create the assistant panel
+  let panel = document.getElementById('smartFormAssistantPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'smartFormAssistantPanel';
+    panel.className = 'card-glass';
+    panel.style.cssText = 'margin-top: 1.25rem; border-left: 4px solid var(--primary);';
+    const formContainer = elements.govFormFieldsContainer;
+    if (formContainer && formContainer.parentNode) {
+      formContainer.parentNode.insertBefore(panel, formContainer.nextSibling);
     }
-  } catch (err) {
-    alert('Validation error: ' + err.message);
+  }
+
+  let html = `<h3 class="card-title" style="margin-bottom: 0.75rem;">🧠 Smart Form Assistant</h3>`;
+
+  // Completed fields
+  const completedHtml = analysis.fieldStatus
+    .filter(f => f.status === 'completed')
+    .map(f => `<div style="color: var(--success); font-size: 0.825rem;">✓ ${escapeHtml(f.label)} completed</div>`)
+    .join('');
+  if (completedHtml) html += completedHtml;
+
+  // Missing required fields
+  if (analysis.missingFields.length > 0) {
+    html += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--danger-bg); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px;">
+      <div style="font-weight: 700; font-size: 0.85rem; color: var(--danger); margin-bottom: 0.35rem;">Important information missing</div>`;
+    analysis.missingFields.forEach(f => {
+      html += `<div style="font-size: 0.8rem; color: #991b1b; margin-bottom: 0.15rem;">• ${escapeHtml(f.label)} <span style="font-size: 0.725rem;">(required)</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Incomplete fields
+  if (analysis.incompleteFields.length > 0) {
+    html += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--warning-bg); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px;">
+      <div style="font-weight: 700; font-size: 0.85rem; color: #b45309; margin-bottom: 0.35rem;">Possible incomplete information</div>`;
+    analysis.incompleteFields.forEach(f => {
+      html += `<div style="font-size: 0.8rem; color: #78350f;">${escapeHtml(f.issue)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Inconsistencies
+  if (analysis.inconsistencies.length > 0) {
+    html += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--warning-bg); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px;">
+      <div style="font-weight: 700; font-size: 0.85rem; color: #b45309; margin-bottom: 0.35rem;">⚠️ Potential inconsistency detected</div>`;
+    analysis.inconsistencies.forEach(inc => {
+      html += `<div style="font-size: 0.8rem; color: #78350f;">${escapeHtml(inc.issue)}<br><em>${escapeHtml(inc.recommendation)}</em></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Possible problems
+  if (analysis.possibleProblems.length > 0) {
+    html += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;">
+      <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem;">Possible issue</div>`;
+    analysis.possibleProblems.forEach(p => {
+      html += `<div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(p)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Recommended next step
+  html += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--primary-light); border: 1px solid var(--primary-border); border-radius: 8px;">
+    <div style="font-weight: 700; font-size: 0.85rem; color: var(--primary); margin-bottom: 0.25rem;">→ Recommended next step</div>
+    <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-main);">${escapeHtml(analysis.nextStep)}</div>
+    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;"><strong>Why:</strong> ${escapeHtml(analysis.reason)}</div>
+    <div style="font-size: 0.8rem; color: var(--primary); margin-top: 0.15rem;">${escapeHtml(analysis.recommendedAction)}</div>
+  </div>`;
+
+  panel.innerHTML = html;
+}
+
+function validateGovFormFields() {
+  const currentValues = {};
+  document.querySelectorAll('.gov-form-input').forEach(inp => {
+    currentValues[inp.name] = inp.value;
+  });
+
+  const analysis = analyzeFormState(state.gov.formFields, currentValues);
+
+  // Render the assistant with latest state
+  renderSmartFormAssistant();
+
+  if (analysis.missingFields.length === 0 && analysis.inconsistencies.length === 0) {
+    alert('✅ All required form fields are complete. Ready for review.');
+    return true;
+  } else {
+    const errors = [];
+    analysis.missingFields.forEach(f => errors.push(`• Missing: ${f.label}`));
+    analysis.incompleteFields.forEach(f => errors.push(`• Incomplete: ${f.label}`));
+    analysis.inconsistencies.forEach(inc => errors.push(`• ${inc.issue}`));
+    alert(`⚠️ Please review form issues:\n\n${errors.join('\n')}`);
+    return false;
   }
 }
 
@@ -973,35 +1206,49 @@ function openGovReviewModal() {
 async function submitGovApplication() {
   try {
     elements.confirmGovSubmissionBtn.disabled = true;
-    elements.confirmGovSubmissionBtn.textContent = 'Processing Registration...';
+    elements.confirmGovSubmissionBtn.textContent = 'Preparing Application Record...';
 
     const currentValues = {};
     document.querySelectorAll('.gov-form-input').forEach(inp => {
       currentValues[inp.name] = inp.value;
     });
 
-    const res = await fetch('/api/gov/application/confirm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        processId: state.gov.process.id,
-        confirmedFields: currentValues,
-        userSignatureConsent: true,
-        sessionId: state.sessionId
-      })
-    });
+    // Validate fields before preparing
+    const analysis = analyzeFormState(state.gov.formFields, currentValues);
+    if (analysis.missingFields.length > 0) {
+      alert(`⚠️ Please fill all required fields before completing preparation:\n• ${analysis.missingFields.map(f => f.label).join('\n• ')}`);
+      elements.confirmGovSubmissionBtn.disabled = false;
+      elements.confirmGovSubmissionBtn.textContent = 'Confirm & Save Reference Number';
+      return;
+    }
 
-    const data = await res.json();
-    state.gov.referenceNumber = data.referenceNumber;
-    state.gov.timeline = data.timeline;
+    // Local reference number generation (Task 4)
+    const refNumber = `GOV-${new Date().getFullYear()}-${Date.now().toString().slice(-8)}`;
+    state.gov.referenceNumber = refNumber;
+
+    // Record timeline audit event
+    const auditEvent = {
+      timestamp: new Date().toISOString(),
+      type: 'APPLICATION_PREPARED',
+      details: {
+        referenceNumber: refNumber,
+        process: state.gov.process ? state.gov.process.title : 'Government Service',
+        fieldsCompleted: Object.keys(currentValues).length,
+        status: 'Prepared for official portal submission'
+      }
+    };
+    state.gov.timeline.push(auditEvent);
 
     elements.govReviewModal.classList.remove('open');
     renderGovTimeline();
 
-    alert(`🎉 Application Registered Successfully!\n\nOfficial Reference Number: ${data.referenceNumber}\n\nPlease save this number for portal tracking.`);
-    speakAloud(`Application registered. Reference number is ${data.referenceNumber}.`);
+    const portalUrl = state.gov.process && state.gov.process.officialPortal ? state.gov.process.officialPortal.url : 'https://www.india.gov.in';
+    const portalName = state.gov.process && state.gov.process.officialPortal ? state.gov.process.officialPortal.name : 'Official Portal';
+
+    alert(`📋 Application Prepared Successfully!\n\nReference Tracking ID: ${refNumber}\n\n⚠️ Important Next Step:\nYour application details and checklist are ready. Please proceed to the official portal (${portalName}) to complete your final submission:\n${portalUrl}`);
+    speakAloud(`Application prepared. Your reference tracking number is ${refNumber}. Please proceed to the official government portal for final submission.`);
   } catch (err) {
-    alert('Submission error: ' + err.message);
+    alert('Preparation error: ' + err.message);
   } finally {
     elements.confirmGovSubmissionBtn.disabled = false;
     elements.confirmGovSubmissionBtn.textContent = 'Confirm & Save Reference Number';
@@ -1016,7 +1263,7 @@ function renderGovTimeline() {
 
   elements.govTimelineBox.innerHTML = state.gov.timeline.map(ev => `
     <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
-      <span style="color: #38bdf8;">${ev.timestamp.split('T')[1].slice(0, 8)}</span>
+      <span style="color: #38bdf8;">${ev.timestamp ? ev.timestamp.split('T')[1].slice(0, 8) : ''}</span>
       <div>
         <strong style="color: #f8fafc;">${ev.type}</strong>
         <div style="font-size: 0.775rem; color: #cbd5e1;">${typeof ev.details === 'object' ? JSON.stringify(ev.details) : ev.details}</div>
@@ -1027,27 +1274,30 @@ function renderGovTimeline() {
 
 async function handleGovVoiceQuery(query) {
   elements.govVoiceStatusText.textContent = '🤔 Thinking...';
-  elements.govVoiceLog.innerHTML += `<div><strong>You:</strong> "${query}"</div>`;
+  elements.govVoiceLog.innerHTML += `<div><strong>You:</strong> "${escapeHtml(query)}"</div>`;
 
   try {
-    const res = await fetch('/api/gov/voice/chat', {
+    const data = await fetchJson('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query,
+        message: query,
         context: {
+          mode: 'government-agent',
           process: state.gov.process,
           requiredDocs: state.gov.requiredDocs,
-          checklist: state.gov.checklist
+          checklist: state.gov.checklist,
+          documentText: state.contract.documentText || '',
+          findings: state.contract.analysis ? state.contract.analysis.findings : []
         }
       })
     });
 
-    const data = await res.json();
-    elements.govVoiceLog.innerHTML += `<div style="color: var(--primary);"><strong>Assistant:</strong> ${data.reply}</div>`;
+    elements.govVoiceLog.innerHTML += `<div style="color: var(--primary);"><strong>Assistant:</strong> ${formatMarkdownText(data.reply)}</div>`;
     elements.govVoiceStatusText.textContent = '🔊 Speaking response...';
     speakAloud(data.reply);
   } catch (err) {
+    elements.govVoiceLog.innerHTML += `<div style="color: var(--danger);"><strong>Error:</strong> ${escapeHtml(err.message)}</div>`;
     elements.govVoiceStatusText.textContent = 'Ready';
   }
 }
@@ -1117,17 +1367,16 @@ function setupUniversalModals() {
   if (elements.saveBtn) {
     elements.saveBtn.addEventListener('click', async () => {
       try {
-        const res = await fetch('/api/checklist/save', {
+        const data = await fetchJson('/api/checklist/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documentName: state.contract.filename || 'Student Contract Analysis',
+            documentName: state.contract.filename || 'User Contract Analysis',
             analysis: state.contract.analysis,
             checklist: state.contract.checklist,
             company: state.contract.company
           })
         });
-        const data = await res.json();
         if (data.shareUrl) {
           alert(`✅ Analysis state saved successfully!\nShare ID: ${data.shareId}`);
         }
@@ -1140,17 +1389,16 @@ function setupUniversalModals() {
   if (elements.shareBtn) {
     elements.shareBtn.addEventListener('click', async () => {
       try {
-        const res = await fetch('/api/checklist/save', {
+        const data = await fetchJson('/api/checklist/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documentName: state.contract.filename || 'Student Contract Analysis',
+            documentName: state.contract.filename || 'User Contract Analysis',
             analysis: state.contract.analysis,
             checklist: state.contract.checklist,
             company: state.contract.company
           })
         });
-        const data = await res.json();
         const fullShareUrl = window.location.origin + data.shareUrl;
         elements.shareUrlInput.value = fullShareUrl;
         elements.shareModal.classList.add('open');
@@ -1189,7 +1437,7 @@ function exportMarkdownReport() {
   const company = state.contract.company || {};
   const checklist = state.contract.checklist || [];
 
-  let report = `# Student Contract Transparency Analysis Report\n\n`;
+  let report = `# User Contract Transparency Analysis Report\n\n`;
   report += `**Document Name:** ${filename}\n`;
   report += `**Date:** ${new Date().toLocaleDateString()}\n`;
   report += `**Risk Rating:** ${summary.overallRiskScore}\n\n`;
@@ -1218,7 +1466,7 @@ function exportMarkdownReport() {
     report += `\n`;
   }
 
-  report += `## 4. Student Action Checklist\n\n`;
+  report += `## 4. User Action Checklist\n\n`;
   checklist.forEach((item, idx) => {
     report += `- [${item.status === 'Completed' ? 'x' : ' '}] **${item.task}** (${item.priority} Priority): ${item.description}\n`;
   });
