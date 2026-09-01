@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
-    "test": "node tests/analyzer.test.js && node tests/smartForm.test.js && node tests/integration.test.js"
+    "test": "node tests/analyzer.test.js && node tests/smartForm.test.js && node tests/integration.test.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "keywords": [
     "student-protection",
@@ -24,5 +26,8 @@
     "express": "^5.2.1",
     "multer": "^2.3.0",
     "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.127.1"
   }
 }
