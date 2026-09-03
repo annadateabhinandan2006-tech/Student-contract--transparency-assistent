@@ -485,6 +485,18 @@ const elements = {
   verificationContent: document.getElementById('verificationContent'),
 
   // Header Actions & Universal Modals
+  navDashboardBtn: document.getElementById('navDashboardBtn'),
+  navSavedReportsBtn: document.getElementById('navSavedReportsBtn'),
+  dashboardModal: document.getElementById('dashboardModal'),
+  closeDashboardModalBtn: document.getElementById('closeDashboardModalBtn'),
+  savedReportsModal: document.getElementById('savedReportsModal'),
+  closeSavedReportsModalBtn: document.getElementById('closeSavedReportsModalBtn'),
+  dashModalTotalDocs: document.getElementById('dashModalTotalDocs'),
+  dashModalSavedReports: document.getElementById('dashModalSavedReports'),
+  dashModalHighRiskCount: document.getElementById('dashModalHighRiskCount'),
+  dashModalChecklistRatio: document.getElementById('dashModalChecklistRatio'),
+  dashModalRecentList: document.getElementById('dashModalRecentList'),
+  savedReportsListContainer: document.getElementById('savedReportsListContainer'),
   saveBtn: document.getElementById('saveBtn'),
   shareBtn: document.getElementById('shareBtn'),
   exportMdBtn: document.getElementById('exportMdBtn'),
@@ -1978,8 +1990,120 @@ function setupUniversalModals() {
     });
   }
 
+  // Dashboard Nav Button
+  if (elements.navDashboardBtn) {
+    elements.navDashboardBtn.addEventListener('click', openDashboardModal);
+  }
+  if (elements.closeDashboardModalBtn) {
+    elements.closeDashboardModalBtn.addEventListener('click', () => {
+      if (elements.dashboardModal) elements.dashboardModal.classList.remove('open');
+    });
+  }
+
+  // Saved Reports Nav Button
+  if (elements.navSavedReportsBtn) {
+    elements.navSavedReportsBtn.addEventListener('click', openSavedReportsModal);
+  }
+  if (elements.closeSavedReportsModalBtn) {
+    elements.closeSavedReportsModalBtn.addEventListener('click', () => {
+      if (elements.savedReportsModal) elements.savedReportsModal.classList.remove('open');
+    });
+  }
+
   if (elements.exportMdBtn) {
     elements.exportMdBtn.addEventListener('click', exportMarkdownReport);
+  }
+}
+
+async function openDashboardModal() {
+  const highRiskCount = state.contract.analysis ? (state.contract.analysis.findings || []).filter(f => f.severity === 'high').length : 0;
+  const checklistTotal = state.contract.checklist.length;
+  const checklistCompleted = state.contract.checklist.filter(i => i.status === 'Completed').length;
+
+  let savedCount = 0;
+  try {
+    const res = await fetchJson('/api/reports');
+    if (res.reports) savedCount = res.reports.length;
+  } catch (_) {}
+
+  if (elements.dashModalTotalDocs) elements.dashModalTotalDocs.textContent = state.stats.totalDocsProcessed || 1;
+  if (elements.dashModalSavedReports) elements.dashModalSavedReports.textContent = savedCount;
+  if (elements.dashModalHighRiskCount) elements.dashModalHighRiskCount.textContent = highRiskCount;
+  if (elements.dashModalChecklistRatio) elements.dashModalChecklistRatio.textContent = `${checklistCompleted} / ${checklistTotal}`;
+
+  if (elements.dashModalRecentList) {
+    if (state.contract.analysis) {
+      elements.dashModalRecentList.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+          <div>
+            <strong>${escapeHtml(state.contract.filename || 'Contract Document')}</strong>
+            <div style="font-size: 0.775rem; color: var(--text-muted);">${new Date().toLocaleDateString()}</div>
+          </div>
+          <span class="badge ${highRiskCount > 0 ? 'badge-red' : 'badge-green'}">${state.contract.analysis.summary.overallRiskScore || 'Low'} Risk</span>
+        </div>
+      `;
+    } else {
+      elements.dashModalRecentList.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">No contracts analyzed yet in this session.</div>';
+    }
+  }
+
+  if (elements.dashboardModal) elements.dashboardModal.classList.add('open');
+}
+
+async function openSavedReportsModal() {
+  if (elements.savedReportsModal) elements.savedReportsModal.classList.add('open');
+  if (elements.savedReportsListContainer) elements.savedReportsListContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1rem;">Loading saved reports...</div>';
+
+  try {
+    const data = await fetchJson('/api/reports');
+    const reports = data.reports || [];
+
+    if (reports.length === 0) {
+      elements.savedReportsListContainer.innerHTML = `
+        <div class="empty-state" style="padding: 1.5rem;">
+          <div class="empty-icon">💾</div>
+          <h3>No Saved Reports Yet</h3>
+          <p>Analyze a contract and click <strong>Save</strong> to persist your analysis reports here.</p>
+        </div>
+      `;
+      return;
+    }
+
+    elements.savedReportsListContainer.innerHTML = reports.map(r => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border);">
+        <div>
+          <strong style="font-size: 0.9rem; color: var(--text-main);">${escapeHtml(r.documentName || 'Saved Report')}</strong>
+          <div style="font-size: 0.775rem; color: var(--text-muted);">Saved on ${new Date(r.savedAt).toLocaleString()}</div>
+        </div>
+        <button class="btn btn-primary btn-sm restore-report-btn" data-id="${r.id}">Restore &amp; View ➔</button>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.restore-report-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        try {
+          const res = await fetchJson(`/api/reports/${id}`);
+          if (res.report) {
+            onContractAnalysisComplete({
+              analysis: res.report.analysis,
+              documentText: res.report.documentText || '',
+              filename: res.report.documentName,
+              company: res.report.company,
+              checklist: res.report.checklist
+            });
+            if (elements.savedReportsModal) elements.savedReportsModal.classList.remove('open');
+            alert(`✅ Restored saved report: ${res.report.documentName}`);
+          }
+        } catch (err) {
+          alert('Failed to restore report: ' + err.message);
+        }
+      });
+    });
+  } catch (err) {
+    if (elements.savedReportsListContainer) {
+      elements.savedReportsListContainer.innerHTML = `<div style="font-size: 0.85rem; color: var(--danger); text-align: center; padding: 1rem;">Could not load reports: ${escapeHtml(err.message)}</div>`;
+    }
   }
 }
 

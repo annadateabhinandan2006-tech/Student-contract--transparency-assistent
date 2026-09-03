@@ -704,6 +704,73 @@
     </div>
   </div>
 
+  <!-- MODAL: DASHBOARD METRICS -->
+  <div id="dashboardModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 650px;">
+      <h3 style="margin-bottom: 0.35rem; color: var(--text-main);">📊 Real-Time Application Dashboard</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Overview of contract analysis sessions, saved reports, and system statistics.</p>
+      
+      <div class="dashboard-widgets-grid" style="margin-bottom: 1.25rem;">
+        <div class="widget-card">
+          <div class="widget-icon icon-blue">📄</div>
+          <div class="widget-info">
+            <div class="widget-value" id="dashModalTotalDocs">0</div>
+            <div class="widget-label">Contracts Analyzed</div>
+          </div>
+        </div>
+
+        <div class="widget-card">
+          <div class="widget-icon icon-teal">💾</div>
+          <div class="widget-info">
+            <div class="widget-value" id="dashModalSavedReports">0</div>
+            <div class="widget-label">Saved Reports</div>
+          </div>
+        </div>
+
+        <div class="widget-card">
+          <div class="widget-icon icon-purple">⚠️</div>
+          <div class="widget-info">
+            <div class="widget-value" id="dashModalHighRiskCount">0</div>
+            <div class="widget-label">High-Risk Findings</div>
+          </div>
+        </div>
+
+        <div class="widget-card">
+          <div class="widget-icon icon-green">✅</div>
+          <div class="widget-info">
+            <div class="widget-value" id="dashModalChecklistRatio">0 / 0</div>
+            <div class="widget-label">Tasks Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-main);">Recent Contracts & Reports</h4>
+      <div id="dashModalRecentList" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem;">
+        <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">No contracts analyzed yet in this session.</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button id="closeDashboardModalBtn" class="btn btn-secondary">Close Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SAVED REPORTS -->
+  <div id="savedReportsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 650px;">
+      <h3 style="margin-bottom: 0.35rem; color: var(--text-main);">💾 Saved Contract Reports</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Select any previously saved analysis report to restore its findings and checklist.</p>
+      
+      <div id="savedReportsListContainer" style="max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem;">
+        <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">Loading saved reports...</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button id="closeSavedReportsModalBtn" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Professional Footer (Apple / Stripe / Vercel Style) -->
   <footer class="app-footer">
     <div class="footer-inner">
