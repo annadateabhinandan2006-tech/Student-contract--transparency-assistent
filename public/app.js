@@ -684,7 +684,7 @@ function setupContractAssistant() {
   }
 
   // Feature / Sample Cards
-  document.querySelectorAll('#quickSampleChipsContainer .feature-card').forEach(card => {
+  document.querySelectorAll('[data-id^="sample_"]').forEach(card => {
     card.addEventListener('click', async () => {
       const sampleId = card.getAttribute('data-id');
       showProgressiveLoading('Loading sample document...');
